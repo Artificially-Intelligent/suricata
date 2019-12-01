@@ -40,6 +40,9 @@ auth0_server(function(input, output, session, options) {
   dstCount <- destinationCount(alrtStream)
   
   
+  wwwLength <- httpLength(alrtStream)
+  
+  
   
   #so Record the time that the session started.
   startTime <- as.numeric(Sys.time())
@@ -52,7 +55,7 @@ auth0_server(function(input, output, session, options) {
     
     valueBox(
       value = formatC(downloadRate, digits = 1, format = "f"),
-      subtitle = paste("Http request per sec (last",maxAgeMinutes, "min)"),
+      subtitle = paste("Web request per sec (last",maxAgeMinutes, "min)"),
       icon = icon("area-chart"),
       color = if (downloadRate >= input$rateThreshold) "yellow" else "aqua"
     )
@@ -61,16 +64,25 @@ auth0_server(function(input, output, session, options) {
   output$destinations <- renderValueBox({
     valueBox(
       dstCount(),
-      "Unique desintations",
-      icon = icon("computer-classic")
+      "Unique Web Desintations",
+      icon = icon("desktop")
+    )
+  })
+  
+  
+  output$wwwBytes <- renderValueBox({
+    valueBox(
+      round(wwwLength()/(1024*1024),1),
+      "Total Web Volume (MB)",
+      icon = icon("window-restore")
     )
   })
   
   output$requests <- renderValueBox({
     valueBox(
       rqstCount(),
-      "Total HTTP requests",
-      icon = icon("browser")
+      "Total Web Volume (requests)",
+      icon = icon("window-restore")
     )
   })
   

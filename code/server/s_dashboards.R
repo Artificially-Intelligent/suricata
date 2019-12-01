@@ -220,3 +220,12 @@ destinationCount <- function(alrtStream, event_type = "http") {
     memo + (df %>% filter(event_type == e_type)%>% group_by(dest_ip) %>% summarise() %>% nrow())
   }, 0)
 }
+
+# Count the total nrows of distinct alrtStream$dest_ip
+httpLength <- function(alrtStream, event_type = "http") {
+  shinySignals::reducePast(alrtStream, function(memo, df, e_type = event_type) {
+    if (is.null(df))
+      return(memo)
+    memo + (df %>% filter(event_type == e_type) %>% summarise(http.length = sum(http.length)) )
+  }, 0)
+}

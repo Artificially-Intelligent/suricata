@@ -14,7 +14,8 @@ tabItem_dashboard <-tabItem(tabName = "dashboard",
                            fluidRow(
                              valueBoxOutput("rate"),
                              valueBoxOutput("requests"),
-                             valueBoxOutput("destinations")
+                             valueBoxOutput("destinations"),
+                             valueBoxOutput("wwwBytes")
                            ),
                            fluidRow(
                              box(
