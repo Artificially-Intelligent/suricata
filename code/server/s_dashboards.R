@@ -98,7 +98,6 @@ alertStream <- function(session) {
   r <- redux::hiredis(host = 'unraiden.local')
   r$PING()
   
-  
   total_entries <- r$LLEN(key='suricata')
   
   # Returns new lines
@@ -111,9 +110,9 @@ alertStream <- function(session) {
       new_entries <- total_entries - last_total_entries
     }else{
       new_entries <- 5000
-      # if((total_entries - last_total_entries)  > 25000){
-      #   last_total_entries <- total_entries - 25000
-      # }
+       if((total_entries - last_total_entries)  > 25000){
+         last_total_entries <- total_entries - 25000
+       }
     }
     
     print(paste("new lines to load:",new_entries))
@@ -122,7 +121,7 @@ alertStream <- function(session) {
     newlines <- ""
     if(new_entries > 0){
       tryCatch(
-        newlines <- r$LRANGE(key='suricata',last_total_entries,last_total_entries + new_entries), 
+        newlines <- r$LRANGE(key='suricata',last_total_entries,last_total_entries + new_entries -1), 
         error = function(c) {
           new_entries <- 0
           msg <- conditionMessage(c)
@@ -156,18 +155,23 @@ alertStream <- function(session) {
 
     result <- as.data.table(jsonlite::flatten(jsonlite::stream_in(file(tmp_json_file)))) %>%
       mutate(timestamp_num = as.numeric(as_datetime(timestamp))) %>%
-      filter(timestamp_num > isolate(dash_values$redis_last_timestamp_num)) %>%
       iplookup %>%
-      mutate(received = as.numeric(Sys.time()))
-    #unlink(tmp)
+      mutate(received = as.numeric(Sys.time())) %>%
+      filter(timestamp_num > isolate(dash_values$redis_last_timestamp_num))
+
+    unlink(tmp_json_file)
     
+    if(nrow(result) == 0)
+      return()
+    
+    print(paste("last timestamp:",result[nrow(result),]$timestamp))
     dash_values$redis_last_timestamp_num <- result[nrow(result),]$timestamp_num
-    
-    #print(names(result))
     
     missing <- setdiff(names(prototype), names(result))  # Find names of missing columns
     
-    print(paste("missing cols:",missing ))
+    #print(names(result))
+    #print(paste("missing cols:",missing ))
+    
     if(length(missing)>0){result[missing] <- NA }                  # Add them, filled with NA's
     result <- result[names(prototype)]       # Put columns in desired order    
         
@@ -180,16 +184,21 @@ alertStream <- function(session) {
 # (assuming the presence of a "received" field)
 alertData <- function(alrtStream, timeWindow, event_type = "http") {
   shinySignals::reducePast(alrtStream, function(memo, value,e_type = event_type) {
-    print(paste(event_type , 'results:', nrow(filter(value, event_type == e_type))))
-    print(paste('filtered', e_type , 'results:', nrow(filter(value, event_type == e_type) %>%
-                                                   select( names(prototype) ) %>%
-                                                   rbind(memo) %>%
-                                                   filter(timestamp_num > as.numeric(Sys.time()) - timeWindow)
-                                                 )))
-    filter(value, event_type == e_type) %>%
-    select( names(prototype) ) %>%
-    rbind(memo) %>%
-    filter(timestamp_num > as.numeric(Sys.time()) - timeWindow)
+    if(!is.null(value)){
+      print(paste(event_type , 'results:', nrow(value %>% filter(event_type == e_type))))
+      print(paste('filtered', e_type , 'results:', nrow(value %>% filter(event_type == e_type) %>%
+                                                     select( names(prototype) ) %>%
+                                                     rbind(memo)  %>%
+                                                     filter(timestamp_num > as.numeric(Sys.time()) - timeWindow)
+                                                   )))
+      value %>%
+      filter(event_type == e_type) %>%
+      select( names(prototype) ) %>%
+      rbind(memo) %>%
+      filter(timestamp_num > as.numeric(Sys.time()) - timeWindow)
+    }else{
+      memo
+    }
   }, prototype)
 }
 
