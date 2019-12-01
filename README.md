@@ -1,2 +1,2 @@
-# suricata
- R shiny based gui for suricata event logging
+# Datathon2019
+Code and material for Melbourne Datathon 2019

@@ -1,0 +1,7 @@
+name: datathon2019
+remote_url: !expr Sys.getenv("OAUTH_REDIRECT_URL")
+auth0_config:
+  api_url: !expr paste0('https://', Sys.getenv("OAUTH_USER"), '.au.auth0.com')
+  credentials:
+    key: !expr Sys.getenv("OAUTH_KEY")
+    secret: !expr Sys.getenv("OAUTH_SECRET")

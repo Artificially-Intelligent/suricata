@@ -1,0 +1,40 @@
+.logo img{
+    height: 45% ;
+    /* display: block; */
+    /* width: 100%; */
+    margin: auto;
+}
+
+.logo_subscript{
+  margin: auto;
+  text-align: center;
+  font-size: 12pt;
+  line-height:0;
+  font-weight: 400;
+}
+
+.main-header .logo {
+    -webkit-transition: width .3s ease-in-out;
+    -o-transition: width .3s ease-in-out;
+    transition: width .3s ease-in-out;
+    /* display: block; */
+    float: left;
+    height: 50px;
+    font-size: 20px;
+    position: absolute;
+    line-height: 50px;
+    text-align: center;
+    /* width: 230px; */
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    padding: 0 15px;
+    font-weight: 300;
+    overflow: hidden;
+}
+
+.content {
+    padding-top: 50px;
+    margin-right: auto;
+    margin-left: auto;
+    padding-left: 15px;
+    padding-right: 15px;
+}
