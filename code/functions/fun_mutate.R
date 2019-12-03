@@ -34,3 +34,12 @@ get_shape_info <- function(id, df, df_descriptors){
 
   dft
 }
+
+iplookup <- function(x){
+  cbind(x, rgeolocate::ip2location(ips = x$dest_ip, file = iplookup_db_file, fields = c('country_code','city','lat','long')))
+}
+
+
+subset_colclasses <- function(DF, colclasses = c("numeric","character","factor", "integer")) {
+  DF[,sapply(DF, function(vec, test) class(vec) %in% test, test=colclasses)]
+}

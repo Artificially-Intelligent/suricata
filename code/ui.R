@@ -6,15 +6,18 @@
 #
 
 
-ui <- dashboardPagePlus(skin = 'yellow',
+ui <- dashboardPagePlus(
+                        skin = 'yellow',
                         md = TRUE,
-                    #    sidebar_fullCollapse = TRUE,
+                        sidebar_fullCollapse = TRUE,
                         header = dashboardHeaderPlus(
                           fixed = TRUE,
                           #title = "Modular Mapping",
                           title = tagList(
                             tags$span(class = "logo-lg", project_name), 
-                            tags$img(src = "./img/dataraconteurs.png")
+                            tags$img(src = "./img/artificially-intelligent.png"),
+                            use_waiter(),
+                            show_waiter_on_load(spin_fading_circles())
                           ),
                           enable_rightsidebar = FALSE,
                           rightSidebarIcon = "gears",
@@ -24,12 +27,12 @@ ui <- dashboardPagePlus(skin = 'yellow',
               rightsidebar = uiOutput("ui_rightsidebar"),
               dashboardBody(
                 includeCSS("www/ui.css"),
-                
+                use_waiter(),
                 uiOutput("ui_body")
               ),
               title = project_name,
               footer = dashboardFooter(
-                left_text = "By DataRaconteurs",
+                left_text = "By Artificially-Intelligent",
                 right_text = "Melbourne, 2019"
               )
 )

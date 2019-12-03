@@ -11,6 +11,8 @@
   library(shinydashboard)
   library(bubbles)        # devtools::install_github("jcheng5/bubbles")
   
+  library(waiter)
+  
   my_packages <- c('tidyverse','shiny', 'shinycssloaders', 
                    'shinydashboard', 'shinydashboardPlus', 'shinyjs', 'shinyWidgets', 
                    'DT', 'dygraphs', 'gridExtra', 'RColorBrewer',
@@ -29,8 +31,20 @@
   app_directory <- './'
   project_name <- 'Suricata Dashboard'
   
+  max_history_load_size <- 15000
+  default_load_size <- 5000
+  data_refresh_secs <- 5
+  
   iplookup_db_file <- '../data/IP2LOCATION-LITE-DB9.BIN'
   tmp_json_file <- '../data/tmp.json'
+  event_types <- c('alert',
+              'drop',
+              'flow',
+              'netflow',
+              'dns',
+              'fileinfo',
+              'http',
+              'tls')
   
   if(!file.exists(iplookup_db_file))
     print("could no locate ip lookup DB file")
@@ -63,7 +77,10 @@
   source('functions/fun_sql.R')
   source('functions/fun_auth0.R')
   
-  source('ui/ui_dashboards.R')
-  source('ui/ui_alerts_map.R')
+  
+  source('ui/ui_all.R')
+  source('ui/ui_http.R')
+  source('ui/ui_flow.R')
+  source('ui/ui_netflow.R')
   print(paste("global.R finished"))
   

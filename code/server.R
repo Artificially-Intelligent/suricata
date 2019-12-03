@@ -1,4 +1,3 @@
-source('server/s_dashboards.R', local = TRUE)
 
 ####--SERVER------------------------------------------------------------------------------------------------
 # Shiny server options
@@ -9,100 +8,9 @@ options(shiny.port = shiny_port
         ,warn = -1)
 
 auth0_server(function(input, output, session, options) {
-
-  v <- reactiveValues(
-     redis_last_total = 0
-  )
-  # 
-  # pkgStream is a reactive expression that represents a stream of
-  # new package download data; up to once a second it may return a
-  # data frame of new downloads since the last update.
-  alrtStream <- alertStream(session)
   
-  maxAgeMinutes <- 30
-  
-  # Max age of data (5 minutes)
-  maxAgeSecs <- 60 * maxAgeMinutes
-  
-  # alrtData is a reactive expression that accumulates previous
-  # values of pkgStream, discarding any that are older than
-  # maxAgeSecs.
-  alrtData <- alertData(alrtStream, maxAgeSecs)
-  
-  
-  # dlCount is a reactive expression that keeps track of the total
-  # number of rows that have ever appeared through pkgStream.
-  rqstCount <- requestCount(alrtStream)
-  
-  # usrCount is a reactive expression that keeps an approximate
-  # count of all of the unique users that have been seen since the
-  # app started.
-  dstCount <- destinationCount(alrtStream)
-  
-  
-  wwwLength <- httpLength(alrtStream)
-  
-  
-  
-  #so Record the time that the session started.
-  startTime <- as.numeric(Sys.time())
-  
-  output$rate <- renderValueBox({
-    # The downloadRate is the number of rows in alrtData since
-    # either startTime or maxAgeSecs ago, whichever is later.
-    elapsed <- as.numeric(Sys.time()) - startTime
-    downloadRate <- nrow(alrtData()) / min(maxAgeSecs, elapsed)
-    
-    valueBox(
-      value = formatC(downloadRate, digits = 1, format = "f"),
-      subtitle = paste("Web request per sec (last",maxAgeMinutes, "min)"),
-      icon = icon("area-chart"),
-      color = if (downloadRate >= input$rateThreshold) "yellow" else "aqua"
-    )
-  })
-  
-  output$destinations <- renderValueBox({
-    valueBox(
-      dstCount(),
-      "Unique Web Desintations",
-      icon = icon("desktop")
-    )
-  })
-  
-  
-  output$wwwBytes <- renderValueBox({
-    valueBox(
-      round(wwwLength()/(1024*1024),1),
-      "Total Web Volume (MB)",
-      icon = icon("window-restore")
-    )
-  })
-  
-  output$requests <- renderValueBox({
-    valueBox(
-      rqstCount(),
-      "Total Web Volume (requests)",
-      icon = icon("window-restore")
-    )
-  })
-  
-  output$packagePlot <- renderBubbles({
-    if (nrow(alrtData()) == 0)
-      return()
-    
-    order <- unique(alrtData()$http.hostname)
-    df <- alrtData() %>%
-      group_by(http.hostname) %>%
-      tally() %>%
-      arrange(desc(n), tolower(http.hostname)) %>%
-      # Just show the top 60, otherwise it gets hard to see
-      head(60)
-    
-    bubbles(df$n, df$http.hostname, key = df$http.hostname)
-  })
-  
-####--UI BLOCK----------------------------------------------------------------------------------------------
-  default_tab = "dashboard"
+  ####--UI BLOCK----------------------------------------------------------------------------------------------
+  default_tab = "http_dashboard"
   current_version = "0.01"
   
   print(paste("rewriting search string to: ", '?authentcated'))
@@ -114,7 +22,7 @@ auth0_server(function(input, output, session, options) {
              br(),
              h5(str_c("Version ", current_version)),
              h6(project_name)
-             ),
+      ),
       column(width = 4,
              fluidRow(
                textInput(
@@ -134,70 +42,128 @@ auth0_server(function(input, output, session, options) {
       )
     )
   })
-    
+  
   output$ui_sidebar <- renderUI({
     dashboardSidebar(
       sliderInput("rateThreshold", "Warn when rate exceeds",
                   min = 0, max = 50, value = 3, step = 0.1
       ),
-      sidebarMenu(id = "tab",
-                  menuItem("Dashboard", 
-                           tabName = "dashboard", 
-                           icon = icon("globe-asia")
-                  ),
-                  menuItem("Map", 
-                           tabName = "alerts", 
-                           icon = icon("globe-asia")
-                  )
-                  #,
-                  #menuItem("Queensland map", 
-                  #         tabName = "solution", 
-                  #         icon = icon("globe-asia")
-                  #)
-                  #,
-                  # menuItem("Problem", 
-                  #          tabName = "problem", 
-                  #          icon = icon("bug")
-                  #          ),
-                  # 
-                  # menuItem("Data", 
-                  #          tabName = "data", 
-                  #          icon = icon("cube")
-                  #          ),
+      sidebarMenu(
+          menuItem("All Events",icon = icon("cube"),
+            menuSubItem("Event Dashboard", 
+              tabName = "all_dash", 
+              icon = icon("dashboard")
+            ),
+            menuSubItem("Event Detail", 
+                        tabName = "all_table", 
+                        icon = icon("table")
+            )         
+          ),
+          menuItem("Http",icon = icon("cube"),
+                   menuSubItem("Http Dashboard", 
+                               tabName = "http_dash", 
+                               icon = icon("dashboard")
+                   ),
+                   menuSubItem("Http Map", 
+                               tabName = "http_map", 
+                               icon = icon("globe-asia")
+                   ),
+                   menuSubItem("Http Detail", 
+                               tabName = "http_table", 
+                               icon = icon("table")
+                   )         
+          ),
+          menuItem("Flow",icon = icon("code-branch"),
+            menuSubItem("Flow Dashboard", 
+              tabName = "flow_dash", 
+              icon = icon("dashboard")
+            ),
+            menuSubItem("Flow Map", 
+                        tabName = "flow_map", 
+                        icon = icon("globe-asia")
+            ),
+            menuSubItem("Flow Detail", 
+                        tabName = "flow_table", 
+                        icon = icon("table")
+            ) 
+          ),
+          menuItem("NetFlow",icon = icon("code-branch"),
+                   menuSubItem("NetFlow Dashboard", 
+                               tabName = "netflow_dash", 
+                               icon = icon("dashboard")
+                   ),
+                   menuSubItem("NetFlow Map", 
+                               tabName = "netflow_map", 
+                               icon = icon("globe-asia")
+                   ),
+                   menuSubItem("NetFlow Detail", 
+                               tabName = "netflow_table", 
+                               icon = icon("table")
+                   ) 
+          ),
+          menuItem("Traffic Alerts",icon = icon("exclamation-triangle"),
+            menuSubItem("Alert Dashboard", 
+              tabName = "alert_dash", 
+              icon = icon("dashboard")
+            ),
+            menuSubItem("Alert Map", 
+              tabName = "alert_map", 
+              icon = icon("globe")
+            )
+          ),
+          menuItem("Traffic Drops",icon = icon("bomb"),
+            menuSubItem("Drop Dashboard", 
+              tabName = "drop_dash", 
+              icon = icon("dashboard")
+            ),
+            menuSubItem("Drop Map", 
+              tabName = "drop_map", 
+              icon = icon("globe")
+          )
+        )
       )
     )
   })
   
-#  output$ui_rightsidebar <- renderUI({
-#    rightSidebar(
-#      rightSidebarTabContent(
-#        id = 1,
-#        title = "User Info",
-#        icon = "user"
-#      )
-#    )
-#  })
+  #  output$ui_rightsidebar <- renderUI({
+  #    rightSidebar(
+  #      rightSidebarTabContent(
+  #        id = 1,
+  #        title = "User Info",
+  #        icon = "user"
+  #      )
+  #    )
+  #  })
   
   output$ui_body <- renderUI({
-    updateTabsetPanel(session, "tab", selected = default_tab)
-    tabsetPanel(
-      id = "tab",
-      #tabItem_alerts,
-      tabItem_dashboard
-      # ,
-      # tabItem_solution,
-      # tabItem_problem,
-      # tabItem_data
+    #updateTabItems()
+    #updateTabsetPanel(session, "tabs", selected = "http_dash")
+    tabItems(
+      tabItem_all_dashboard,
+      tabItem_all_table,
+      tabItem_http_dashboard,
+      tabItem_http_map,
+      tabItem_http_table,
+      tabItem_flow_dashboard,
+      # tabItem_flow_map,
+      tabItem_flow_table,
+      tabItem_netflow_dashboard,
+      # tabItem_netflow_map,
+      tabItem_netflow_table
     )
+    
   })
   
   
-####--SERVER BLOCK-----------------------------------------------------------------------------------------
+  ####--SERVER BLOCK-----------------------------------------------------------------------------------------
   
   ## Constants
   
-  ## ReactiveValues
+ # show_waiter(spin_fading_circles())
+  
   v <- reactiveValues(
+    selected_tab = default_tab,
+    event_type = 'http',
     pulse_icon_message = "",
     map_shape_id = NULL,
     selected_alert_id = NULL,
@@ -221,19 +187,57 @@ auth0_server(function(input, output, session, options) {
     last_lng = 132.84667,
     last_lat = -27.21555,
     last_zoom = 4
-  #  ,
-  #  export_mode = FALSE,
-  #  edit_region = FALSE,
-  #  view_overlays = FALSE,
-  #  map_overlay = "",
-  #  filtered_listings_min = 0,
-  #  filtered_listings_max = 0,
-  #  agent_region = "580a000000030003060100030500000000055554462d3800000010000000010004000900000000" %>% text_to_spatial()
+    #  ,
+    #  export_mode = FALSE,
+    #  edit_region = FALSE,
+    #  view_overlays = FALSE,
+    #  map_overlay = "",
+    #  filtered_listings_min = 0,
+    #  filtered_listings_max = 0,
+    #  agent_region = "580a000000030003060100030500000000055554462d3800000010000000010004000900000000" %>% text_to_spatial()
   )
   
-  
   # Server modules 
-#  source('server/s_alerts_map.R', local = TRUE)
+  source('server/s_data.R', local = TRUE)
+  
+  
+  source('server/s_all.R', local = TRUE)
+  source('server/s_http.R', local = TRUE)
+  source('server/s_dns.R', local = TRUE)
+  source('server/s_flow.R', local = TRUE)
+  source('server/s_netflow.R', local = TRUE)
+  
+  source('server/s_http_map.R', local = TRUE)
+  
   source('server/s_user.R', local = TRUE)
+  
+  
+  # 
+  # pkgStream is a reactive expression that represents a stream of
+  # new package download data; up to once a second it may return a
+  # data frame of new downloads since the last update.
+  alert_stream <- alertStream(session)
+  
+  max_age_minutes <- 30
+  
+  # Max age of data (5 minutes)
+  max_age_secs <- 60 * max_age_minutes
+  
+  #so Record the time that the session started.
+  start_timestamp <- as.numeric(Sys.time())
+  first_timestamp <- firstTimestamp(alert_stream)
+  event_count <- eventCount(alert_stream)
+  
+  
+  output$all.event_count.bubbleplot <- renderBubbles({
+    if (nrow(event_count()) == 0)
+      return()
+    
+    order <- unique(event_count()$event_type)
+    df <- event_count() 
+    
+    bubbles(df$event_count, df$event_type, key = df$event_type)
+  })
+  #hide_waiter()
 }
 , info = a0_info)  

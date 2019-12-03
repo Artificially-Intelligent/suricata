@@ -1,0 +1,7 @@
+icmp_type
+icmp_code
+dhcp.type
+dhcp.id
+dhcp.client_mac
+dhcp.assigned_ip
+dhcp.dhcp_type
