@@ -31,9 +31,12 @@
   app_directory <- './'
   project_name <- 'Suricata Dashboard'
   
-  max_history_load_size <- 15000
+  max_history_load_size <- 100000
   default_load_size <- 5000
   data_refresh_secs <- 5
+  
+  #filter data out if older than max_age_minutes
+  max_age_minutes <- 30
   
   iplookup_db_file <- '../data/IP2LOCATION-LITE-DB9.BIN'
   tmp_json_file <- '../data/tmp.json'
@@ -61,10 +64,6 @@
   # Global constants loaded from envrionment variables or default value
   
   shiny_port <- as.integer(if(nchar(Sys.getenv("PORT"))> 0){ Sys.getenv("PORT")}else{ '3838' })
-  shiny_app_init_timeout <- as.integer(if(nchar(Sys.getenv("APP_INIT_TIMEOUT"))> 0){ Sys.getenv("APP_INIT_TIMEOUT")}else{ '60' })
-  shiny_app_idle_timeout <- as.integer(if(nchar(Sys.getenv("APP_IDLE_TIMEOUT"))> 0){ Sys.getenv("APP_IDLE_TIMEOUT")}else{ '5' })
-  print(paste('shiny app_init_timeout:', shiny_app_init_timeout, 'shiny app_idle_timeout:',  shiny_app_idle_timeout ))
-  
   
   # Make sure to source function and ui files here or they won't be used by the app
   # Source server files within server.R 
