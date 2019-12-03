@@ -20,7 +20,7 @@ tabItem_all_dashboard <-tabItem(tabName = "all_dash",
                                       column(width = 8, 
                                        box(
                                          width = 12, status = "info", solidHeader = TRUE,
-                                         title = "Requests to http hosts (last 30 min)",
+                                         title = "Event Types (last 30 min)",
                                          bubblesOutput("all.event_count.bubbleplot", width = "100%", height = 220)
                                             #%>% withSpinner(color="#0dc5c1")
                                          ),
@@ -47,30 +47,16 @@ tabItem_all_dashboard <-tabItem(tabName = "all_dash",
 
 
 tabItem_all_table <-tabItem(tabName = "all_table",
-                             fluidRow(width = "100%",
-                                      column(
-                                        width = 6,h2(icon("table"), HTML("&nbsp;"),"Event Details")
-                                      ),
-                                      column(
-                                        width = 3,
-                                        offset = 3,
-                                        numericInput(
-                                          inputId = "maxrows",
-                                          label = "Rows to show", 
-                                          value =  25,
-                                          min = 0
-                                        )
-                                      )
-                             ),
+       # fluidRow(width = "100%",
+       #          column(
+       #            width = 6,h2(icon("table"), HTML("&nbsp;"),"Event Details")
+       #          )
+       # ),
       fluidRow(
         box(
-          
           width = 12, status = "info", solidHeader = TRUE,
           title = "All Event Details (last 30 min)",
-          div(style = 'overflow-y: scroll;overflow-x: scroll', 
-              tableOutput('all.table') 
-              #%>% withSpinner(color="#0dc5c1")
-          )
+          DTOutput('all.table') 
         )
       ),
       fluidRow(

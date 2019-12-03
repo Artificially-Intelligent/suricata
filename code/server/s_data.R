@@ -120,6 +120,13 @@ prototype <- data.frame(
   tcp.fin = character(), 
   tcp.ecn = character(), 
   tcp.cwr = character(),
+  icmp_type = character(),
+  icmp_code = character(),
+  dhcp.type = character(),
+  dhcp.id = character(),
+  dhcp.client_mac = character(),
+  dhcp.assigned_ip = character(),
+  dhcp.dhcp_type = character(),
   country_code = character(),
   city = character(),
   lat = numeric(),
@@ -133,6 +140,10 @@ prototype <- data.frame(
 
 alertStream <- function(session) {
   # Connect to data source
+  
+  if (! redux::redis_available(host = 'unraiden.local'))
+    return()
+  
   r <- redux::hiredis(host = 'unraiden.local')
   r$PING()
   
@@ -148,20 +159,23 @@ alertStream <- function(session) {
       new_entries <- total_entries - last_total_entries
     }else{
       #new_entries <- default_load_size
-       if((total_entries - last_total_entries)  > max_history_load_size){
-         last_total_entries <- total_entries -  max_history_load_size
-       }
+      if((total_entries - last_total_entries)  > max_history_load_size){
+        last_total_entries <- total_entries -  max_history_load_size
+      }
       new_entries <- total_entries - last_total_entries
-      
     }
     
     print(paste("new lines to load:",new_entries))
+    
     invalidateLater(1000 * data_refresh_secs, session)
     
     newlines <- ""
     if(new_entries > 0){
       tryCatch(
-        newlines <- r$LRANGE(key='suricata',last_total_entries,last_total_entries + new_entries -1), 
+        {
+          #query_time <- r$TIME
+          newlines <- r$LRANGE(key='suricata',last_total_entries,last_total_entries + new_entries -1)
+        },
         error = function(c) {
           new_entries <- 0
           msg <- conditionMessage(c)
@@ -208,7 +222,7 @@ alertStream <- function(session) {
       }
     )
     
-  #  unlink(tmp_json_file)
+    #  unlink(tmp_json_file)
     
     if(nrow(result) == 0)
       return()
@@ -216,15 +230,12 @@ alertStream <- function(session) {
     print(paste("last timestamp:",result[nrow(result),]$timestamp))
     dash_values$redis_last_timestamp_num <- result[nrow(result),]$timestamp_num
     
-    missing <- setdiff(names(prototype), names(result))  # Find names of missing columns
+    # Find names of missing columns and add them filled with NA's
+    missing <- setdiff(names(prototype), names(result))  
+    if(length(missing)>0){result[missing] <- NA }                  
     
-    #print(names(result))
-    #print(paste("missing cols:",missing ))
-    
-    if(length(missing)>0){result[missing] <- NA }                  # Add them, filled with NA's
-    result <- result[names(prototype)]       # Put columns in desired order    
-        
-    result
+    # Return result values for columns in prototype in a desired order 
+    return(result[names(prototype)])
   })
 }
 
@@ -237,26 +248,17 @@ alertData <- function(alrtStream, timeWindow, event_type = '') {
       if(nrow(df)  < default_load_size){
         hide_waiter()
       }
-        
-      if(nchar(e_type)>0)
-        df <- filter(df,event_type == e_type) 
       
-      # print(paste(event_type , 'results:', nrow(df)))
-      # print(paste('filtered', e_type , 'results:', nrow(df %>%
-      #   select( names(prototype) ) %>%
-      #   rbind(memo)  %>%
-      #   filter(timestamp_num > as.numeric(Sys.time()) - timeWindow)
-      # )))
-      
-      if(nchar(e_type)>0)
-        df <- filter(df,event_type == e_type) 
+      if(e_type == '')
+        e_type <- event_types
       
       hide_waiter()
       
       df %>%
-      select( names(prototype) ) %>%
-      rbind(memo) %>%
-      filter(timestamp_num > as.numeric(Sys.time()) - timeWindow)
+        filter(event_type %in%  e_type ) %>%
+        select( names(prototype) ) %>%
+        rbind(memo) %>%
+        filter(timestamp_num > as.numeric(Sys.time()) - timeWindow)
     }else{
       memo
     }
@@ -268,9 +270,11 @@ requestCount <- function(alrtStream, event_type = "") {
   shinySignals::reducePast(alrtStream, function(memo, df, e_type = event_type) {
     if (is.null(df))
       return(memo)
-    if(nchar(e_type)>0)
-      df <- filter(df,event_type == e_type) 
-    memo + nrow(df)
+    
+    if(e_type == '')
+      e_type <- event_types
+    
+    memo + nrow(filter(df,event_type %in% e_type))
   }, 0)
 }
 
@@ -281,7 +285,7 @@ httpSuccessCount <- function(alrtStream){
     
     df <- df %>% 
       filter((round(as.numeric(http.status)/100,1) == 2),
-        event_type == 'http')
+             event_type == 'http')
     memo + nrow(df)
   }, 0)
 }
@@ -291,9 +295,16 @@ destinationCount <- function(alrtStream, event_type = "") {
   shinySignals::reducePast(alrtStream, function(memo, df, e_type = event_type) {
     if (is.null(df))
       return(memo)
-    if(nchar(e_type)>0)
-      df <- filter(df,event_type == e_type) 
-    memo + (df %>% group_by(dest_ip) %>% summarise() %>% nrow())
+    
+    if(e_type == '')
+      e_type <- event_types
+    
+    memo + (df %>% 
+              filter(event_type %in% e_type) %>% 
+              group_by(dest_ip) %>% 
+              summarise() %>% 
+              nrow()
+    )
   }, 0)
 }
 
@@ -303,11 +314,17 @@ firstTimestamp <- function(alrtStream, event_type = '') {
   shinySignals::reducePast(alrtStream, function(memo, df, e_type = event_type) {
     if (is.null(df))
       return(memo)
-    if(nchar(e_type)>0)
-      df <- filter(df,event_type == e_type)
+    
+    if(e_type == '')
+      e_type <- event_types
+    
+    
     if(nrow(df) == 0)
       return(memo)
-    (df %>% summarise(timestamp = min(timestamp_num)))[[1]]
+    (df %>%
+        filter(event_type %in% e_type) %>% 
+        summarise(timestamp = min(timestamp_num))
+    )[[1]]
   }, 0)
 }
 
@@ -317,22 +334,35 @@ totalBytes <- function(alrtStream, event_type = "") {
     
     if (is.null(df))
       return(memo)
-    if(nchar(e_type)>0)
-      df <- filter(df,event_type == e_type)
+    
+    if(e_type == '')
+      e_type <- event_types
     
     if(event_type == 'http')
-      return(memo + (df %>% summarise(total_bytes = sum(http.length)) ))
+      return(memo + (df %>% 
+                       filter(event_type %in% e_type) %>% 
+                       summarise(total_bytes = sum(http.length)) 
+      )
+      )
     if(event_type == 'fileinfo')
-      return(memo + (df %>% summarise(total_bytes = sum(fileinfo.size )) ))
+      return(memo + (df %>% 
+                       filter(event_type %in% e_type) %>% 
+                       summarise(total_bytes = sum(fileinfo.size )) 
+      )
+      )
     if(event_type == 'flow')
-      return(memo + (df %>% summarise(total_bytes = sum(flow.bytes_toclient) +  sum(flow.bytes_toserver)) ))
+      return(memo + (df %>% 
+                       filter(event_type %in% e_type) %>% 
+                       summarise(total_bytes = sum(flow.bytes_toclient) +  sum(flow.bytes_toserver))
+      )
+      )
     return(memo)
   }, 0)
 }
 
 
 event_count_prototype <- data.frame(event_type =  event_types,
-                                      event_count = 0
+                                    event_count = 0
 ) %>% mutate(event_type = as.character(event_type))
 
 

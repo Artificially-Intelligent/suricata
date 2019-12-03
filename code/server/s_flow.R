@@ -100,20 +100,21 @@ output$flow.raw <- renderPrint({
 
 
 
-output$flow.table <- renderTable({
+output$flow.table <- renderDT({
   flow_data() %>% 
-    tail(input$maxrows) %>%
+    mutate(timestamp = as_datetime(timestamp, tz = Sys.timezone(location = TRUE)),  
+           flow.start = as_datetime(flow.start, tz = Sys.timezone(location = TRUE)),  
+           flow.end = as_datetime(flow.end, tz = Sys.timezone(location = TRUE))  
+    ) %>%
+    select(-flow_id,-event_type,-host) %>%
     remove_empty(which = c("rows", "cols")) %>%
-    # select( timestamp,
-    #         flow_id,
-    #         src_ip,
-    #         src_port,
-    #         dest_ip,
-    #         dest_port, 
-    #         proto, starts_with("flow")) %>%
     as.data.frame()
   
-}, digits = 1)
+  }, 
+class = "display nowrap compact", # style
+filter = "top", # location of column filters
+options = list(scrollX = TRUE)
+)
 
 
 
@@ -128,3 +129,86 @@ output$flow.download_csv <- downloadHandler(
   },
   contentType = "text/csv"
 )
+
+output$flow.app_proto_server_bytes.barplot <- renderPlotly({
+  df <- flow_data()
+  if (nrow(df) == 0)
+    return()
+  
+  df$time <- df$timestamp %>% 
+    as_datetime(tz = Sys.timezone(location = TRUE)) %>% 
+    floor_date(unit = "seconds")
+  
+  p <- df %>%
+    group_by(time,app_proto) %>%
+    summarise("Mbps" = sum(flow.bytes_toserver)/131072,) %>%
+    ggplot( aes(x=time, y=Mbps, colour=app_proto)) +
+    geom_col() +
+    #  geom_area(alpha=0.5) +
+    ylab("Mbps") + xlab("Time") + 
+    theme_ipsum()
+  p
+})
+
+output$flow.app_proto_client_bytes.barplot <- renderPlotly({
+  df <- flow_data()
+  if (nrow(df) == 0)
+    return()
+  
+  df$time <- df$timestamp %>% 
+    as_datetime(tz = Sys.timezone(location = TRUE)) %>% 
+    floor_date(unit = "seconds")
+  
+  p <- df %>%
+    group_by(time,app_proto) %>%
+    summarise("Mbps" = sum(flow.bytes_toclient)/131072,) %>%
+    ggplot( aes(x=time, y=Mbps, colour=app_proto)) +
+    geom_col() +
+    #  geom_area(alpha=0.5) +
+    ylab("Mbps") + xlab("Time") + 
+    theme_ipsum()
+  p
+})
+
+
+output$flow.app_proto_server_bytes2.barplot <- renderPlotly({
+  df <- flow_data()
+  if (nrow(df) == 0)
+    return()
+
+  ######
+  # spread value over seconds in datetime range
+  df_results <- data.frame(
+    time = numeric(),
+    app_proto = character(),
+    bytes_toserver = numeric(),
+    bytes_toserver = numeric()
+  )
+  
+  for( i in (1:length(df))){
+    #df_row <- df[3,]
+    df_spread <- (as.numeric(as_datetime(df$flow.start[i]))):(as.numeric(as_datetime(df$flow.end[i]))) %>% 
+      as.data.frame(col.names = c('time')) 
+    names(df_spread) <- 'time'
+    df_spread$app_proto <- df$app_proto[i]
+    df_spread$bytes_toserver <- (df$flow.bytes_toserver[i] / length(df_spread))
+    df_spread$bytes_toclient <- (df$flow.bytes_toclient[i] / length(df_spread))
+    df_results <- rbind(df_results,df_spread)
+  }
+  df_results$time <- as_datetime(df_results$time, origin = lubridate::origin, tz = Sys.timezone(location = TRUE))
+###########  
+  
+  df <- df_results
+  rm(df_results)
+  
+  p <- df %>%
+    group_by(time,app_proto) %>%
+    summarise("Mbps to server" = sum(bytes_toserver)/131072,
+              "Mbps to client" = sum(bytes_toclient)/131072,) %>%
+    ggplot( aes(x=time, y="Mbps to server", colour=app_proto)) +
+    geom_col() +
+    #  geom_area(alpha=0.5) +
+    ylab("Mbps") + xlab("Time") + 
+    theme_ipsum()
+  p
+})

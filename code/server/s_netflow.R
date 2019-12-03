@@ -17,7 +17,7 @@ output$netflow.rate <- renderValueBox({
   
   valueBox(
     value = formatC(download_rate, digits = 1, format = "f"),
-    subtitle = paste("netflow request per sec (last",max_age_minutes, "min)"),
+    subtitle = paste("netflow request/sec (last",max_age_minutes, "min)"),
     icon = icon("area-chart"),
     color = if (download_rate >= input$rateThreshold) "yellow" else "aqua"
   )
@@ -49,6 +49,26 @@ output$netflow.bytes <- renderValueBox({
   )
 })
 
+
+output$netflow.app_proto_bytes.barplot <- renderPlotly({
+  df <- netflow_data()
+  if (nrow(df) == 0)
+    return()
+  
+  df$time <- df$timestamp %>% 
+    as_datetime(tz = Sys.timezone(location = TRUE)) %>% 
+    floor_date(unit = "seconds")
+  
+  p <- df %>%
+    group_by(time,app_proto) %>%
+    summarise("Mbps" = sum(netflow.bytes)/131072,) %>%
+    ggplot( aes(x=time, y=Mbps, colour=app_proto)) +
+    geom_col() +
+    #  geom_area(alpha=0.5) +
+    ylab("Mbps") + xlab("Time") + 
+    theme_ipsum()
+  p
+})
 
 output$netflow.dest_ip.bubbleplot <- renderBubbles({
   if (nrow(netflow_data()) == 0)
@@ -100,20 +120,17 @@ output$netflow.raw <- renderPrint({
 
 
 
-output$netflow.table <- renderTable({
+output$netflow.table <- renderDT({
   netflow_data() %>% 
-    tail(input$maxrows) %>%
+    mutate(timestamp = as_datetime(timestamp, tz = Sys.timezone(location = TRUE))  ) %>%
+    select(-flow_id,-event_type,-host) %>%
     remove_empty(which = c("rows", "cols")) %>%
-    # select( timestamp,
-    #         netflow_id,
-    #         src_ip,
-    #         src_port,
-    #         dest_ip,
-    #         dest_port, 
-    #         proto, starts_with("netflow")) %>%
     as.data.frame()
-  
-}, digits = 1)
+}, 
+class = "display nowrap compact", # style
+filter = "top", # location of column filters
+options = list(scrollX = TRUE)
+)
 
 
 

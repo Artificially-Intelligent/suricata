@@ -29,11 +29,17 @@ tabItem_flow_dashboard <-tabItem(tabName = "flow_dash",
                                    fluidRow(
                                      width = "100%",
                                       column(width = 8, 
+                                       # box(
+                                       #   width = 12, status = "info", solidHeader = TRUE,
+                                       #   title = "Requests to flow destinations (last 30 min)",
+                                       #   bubblesOutput("flow.dest_ip.bubbleplot", width = "100%", height = 220)
+                                       #  ),
                                        box(
                                          width = 12, status = "info", solidHeader = TRUE,
-                                         title = "Requests to flow destinations (last 30 min)",
-                                         bubblesOutput("flow.dest_ip.bubbleplot", width = "100%", height = 220)
-                                        ),
+                                         title = "Traffic by Protocol (last 30 min)",
+                                         plotlyOutput(
+                                           "flow.app_proto_bytes.barplot", width = "100%", height = 220)
+                                       )
                                      ),
                                       column(
                                          width = 4,
@@ -51,45 +57,68 @@ tabItem_flow_dashboard <-tabItem(tabName = "flow_dash",
                                  
 )
 
+
+
+
+tabItem_flow_app_traffic <-tabItem(tabName = "flow_app_traffic",
+                                 tabPanel(
+                                   fluidRow(width = "100%"),
+                                   fluidRow(width = "100%",
+                                            column(
+                                              width = 6,h2(icon("dashboard"), HTML("&nbsp;"),"Traffic Flow By Application")
+                                            )
+                                   ),
+                                   
+                                   fluidRow(
+                                     width = "100%",
+                                     column(width = 6, 
+                                            box(
+                                              width = 12, 
+                                              status = "info", 
+                                              solidHeader = TRUE,
+                                              title = "Traffic to Server by Protocol (last 30 min)",
+                                              plotlyOutput(
+                                                "flow.app_proto_server_bytes.barplot", 
+                                                width = "100%", height = 350)
+                                            )
+                                     ),
+                                     column(width = 6, 
+                                            box(
+                                              width = 12, status = "info", solidHeader = TRUE,
+                                              title = "Traffic to Client by Protocol (last 30 min)",
+                                              plotlyOutput(
+                                                "flow.app_proto_client_bytes.barplot", 
+                                                width = "100%", height = 350)
+                                            )
+                                     )
+                                   )
+                                 )
+                                 
+)
+
+
 ####--UI SOLUTION--------------------------------------------------------------------------------------------
 
 
 tabItem_flow_table <-tabItem(tabName = "flow_table",
-                             fluidRow(width = "100%",
-                                      column(
-                                        width = 6,h2(icon("table"), HTML("&nbsp;"),"Traffic Flow Details")
-                                      ),
-                                      column(
-                                        width = 3,
-                                        offset = 3,
-                                        numericInput(
-                                          inputId = "maxrows",
-                                          label = "Rows to show", 
-                                          value =  25,
-                                          min = 0
-                                        )
-                                      )
-                             ),
-      fluidRow(
-        box(
-          
-          width = 12, status = "info", solidHeader = TRUE,
-          title = "flow request details (last 30 min)",
-          div(style = 'overflow-y: scroll;overflow-x: scroll', 
-              tableOutput('flow.table')
-              #%>% withSpinner(color="#0dc5c1")
-          )
-        )
-      ),
-      fluidRow(
+     fluidRow(width = "100%",
+        column(
+          width = 6,h2(icon("table"), HTML("&nbsp;"),"Traffic Flow Details")
+        ),
         column(
           width = 3,
-          #offset = 6,
+          offset = 3,
           downloadButton("flow.download_csv", "Download as CSV")
         )
+     ),
+    fluidRow(
+      box(
+        width = 12, status = "info", solidHeader = TRUE,
+        title = "flow request details (last 30 min)",
+        DTOutput('flow.table')
+            #%>% withSpinner(color="#0dc5c1")
       )
-#    verbatimTextOutput("flow.raw"),
-    
+    )
   )
 
 

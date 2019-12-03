@@ -7,11 +7,11 @@
 
 
 ui <- dashboardPagePlus(
-                        skin = 'yellow',
+                        skin = 'blue',
                         md = TRUE,
                         sidebar_fullCollapse = TRUE,
                         header = dashboardHeaderPlus(
-                          fixed = TRUE,
+                          #fixed = TRUE,
                           #title = "Modular Mapping",
                           title = tagList(
                             tags$span(class = "logo-lg", project_name), 

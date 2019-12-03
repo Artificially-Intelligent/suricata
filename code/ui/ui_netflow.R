@@ -29,11 +29,17 @@ tabItem_netflow_dashboard <-tabItem(tabName = "netflow_dash",
                                    fluidRow(
                                      width = "100%",
                                       column(width = 8, 
+                                       # box(
+                                       #   width = 12, status = "info", solidHeader = TRUE,
+                                       #   title = "Requests to netflow destinations (last 30 min)",
+                                       #   bubblesOutput("netflow.dest_ip.bubbleplot", width = "100%", height = 220)
+                                       #  ),
                                        box(
                                          width = 12, status = "info", solidHeader = TRUE,
-                                         title = "Requests to netflow destinations (last 30 min)",
-                                         bubblesOutput("netflow.dest_ip.bubbleplot", width = "100%", height = 220)
-                                        ),
+                                         title = "Traffic by Protocol (last 30 min)",
+                                         plotlyOutput(
+                                         "netflow.app_proto_bytes.barplot", width = "100%", height = 220)
+                                       )
                                      ),
                                       column(
                                          width = 4,
@@ -62,23 +68,16 @@ tabItem_netflow_table <-tabItem(tabName = "netflow_table",
                                       column(
                                         width = 3,
                                         offset = 3,
-                                        numericInput(
-                                          inputId = "maxrows",
-                                          label = "Rows to show", 
-                                          value =  25,
-                                          min = 0
-                                        )
+                                        downloadButton("netflow.download_csv", "Download as CSV")
                                       )
                              ),
       fluidRow(
         box(
-          
           width = 12, status = "info", solidHeader = TRUE,
           title = "netflow request details (last 30 min)",
-          div(style = 'overflow-y: scroll;overflow-x: scroll', 
-              tableOutput('netflow.table')
-              #%>% withSpinner(color="#0dc5c1")
-          )
+          DTOutput('netflow.table',
+                   height = 350
+                   )
         )
       ),
       fluidRow(

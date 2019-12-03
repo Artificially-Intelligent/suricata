@@ -41,6 +41,17 @@ output$all.requests <- renderValueBox({
 })
 
 
+output$all.requests.inwindow <- renderValueBox({
+  valueBox(
+    all_data() %>%
+      summarise('requests' = n()),
+    #all_request_count(),
+    "Total Event Volume (requests)",
+    icon = icon("window-restore")
+  )
+})
+
+
 output$all.bytes <- renderValueBox({
   valueBox(
     round(all_bytes_total()/(1024*1024),1),
@@ -106,13 +117,15 @@ output$all.raw <- renderPrint({
   #options(orig)
 })
 
-output$all.table <- renderTable({
-  all_data() %>% 
-    tail(input$maxrows) %>%
+output$all.table <- renderDT({
+  all_data() %>%
     remove_empty(which = c("rows", "cols")) %>%
     as.data.frame()
-  
-}, digits = 1)
+  }, 
+  class = "display nowrap compact", # style
+  filter = "top", # location of column filters
+  options = list(scrollX = TRUE)
+)
 
 
 
