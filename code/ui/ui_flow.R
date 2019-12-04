@@ -101,23 +101,20 @@ tabItem_flow_app_traffic <-tabItem(tabName = "flow_app_traffic",
 
 
 tabItem_flow_table <-tabItem(tabName = "flow_table",
-     fluidRow(width = "100%",
-        column(
-          width = 6,h2(icon("table"), HTML("&nbsp;"),"Traffic Flow Details")
-        ),
-        column(
-          width = 3,
-          offset = 3,
-          downloadButton("flow.download_csv", "Download as CSV")
-        )
-     ),
     fluidRow(
       box(
         width = 12, status = "info", solidHeader = TRUE,
-        title = "flow request details (last 30 min)",
+        title = "Traffic Flow Details",
         DTOutput('flow.table')
             #%>% withSpinner(color="#0dc5c1")
       )
+    ),
+    fluidRow(width = "100%",
+       column(
+         width = 3,
+         #offset = 9,
+         downloadButton("flow.download_csv", "Download as CSV")
+       )
     )
   )
 

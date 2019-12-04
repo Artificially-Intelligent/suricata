@@ -62,7 +62,7 @@ tabItem_all_table <-tabItem(tabName = "all_table",
       fluidRow(
         column(
           width = 3,
-          #offset = 6,
+          #offset = 9,
           downloadButton("all.download_csv", "Download as CSV")
         )
       )

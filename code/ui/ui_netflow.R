@@ -61,20 +61,10 @@ tabItem_netflow_dashboard <-tabItem(tabName = "netflow_dash",
 
 
 tabItem_netflow_table <-tabItem(tabName = "netflow_table",
-                             fluidRow(width = "100%",
-                                      column(
-                                        width = 6,h2(icon("table"), HTML("&nbsp;"),"Traffic netflow Details")
-                                      ),
-                                      column(
-                                        width = 3,
-                                        offset = 3,
-                                        downloadButton("netflow.download_csv", "Download as CSV")
-                                      )
-                             ),
       fluidRow(
         box(
           width = 12, status = "info", solidHeader = TRUE,
-          title = "netflow request details (last 30 min)",
+          title = "Traffic Netflow Details",
           DTOutput('netflow.table',
                    height = 350
                    )
@@ -83,13 +73,13 @@ tabItem_netflow_table <-tabItem(tabName = "netflow_table",
       fluidRow(
         column(
           width = 3,
-          #offset = 6,
+          #offset = 9,
           downloadButton("netflow.download_csv", "Download as CSV")
         )
       )
-#    verbatimTextOutput("netflow.raw"),
-    
-  )
+      #    verbatimTextOutput("netflow.raw"),
+      
+)
 
 
 

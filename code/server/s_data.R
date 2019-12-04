@@ -74,6 +74,10 @@ prototype <- data.frame(
   http.server = character(), 
   http.transfer_encoding = character(), 
   http.vary = character(), 
+  http.accept = character(),
+  http.set_cookie = character(),
+  http.age = character(),
+  http.last_modified = character(),
   fileinfo.filename = character(),
   fileinfo.gaps = character(),
   fileinfo.state = character(),
@@ -155,16 +159,19 @@ alertStream <- function(session) {
     last_total_entries <- isolate(dash_values$redis_last_total)
     total_entries <- r$LLEN(key='suricata')
     print(paste("last total:", last_total_entries, "new total:",total_entries ))
-    if(last_total_entries <= total_entries && (total_entries - last_total_entries)  < default_load_size){
-      new_entries <- total_entries - last_total_entries
+    if(last_total_entries == 0){
+      last_total_entries <- total_entries -  initial_history_load_size
+      new_entries <- initial_history_load_size 
     }else{
-      #new_entries <- default_load_size
-      if((total_entries - last_total_entries)  > max_history_load_size){
-        last_total_entries <- total_entries -  max_history_load_size
+      if(last_total_entries > total_entries){
+        default_load_size
+      }else{
+        if((total_entries - last_total_entries) > max_history_load_size)
+          last_total_entries <- total_entries -  max_history_load_size
+        new_entries <- total_entries - last_total_entries
       }
-      new_entries <- total_entries - last_total_entries
     }
-    
+        
     print(paste("new lines to load:",new_entries))
     if(is.null(input$data_refresh_rate)){
       invalidateLater(1000 * 10, session)
@@ -173,7 +180,6 @@ alertStream <- function(session) {
         invalidateLater(1000 * input$data_refresh_rate, session)
       }
     }
-    
     
     newlines <- ""
     if(new_entries > 0){
@@ -224,7 +230,6 @@ alertStream <- function(session) {
             mutate(received = as.numeric(Sys.time())) %>%
             filter(timestamp_num > redis_last_timestamp_num) %>%
             as.data.frame()
-            
         }
         #result <- result[,!sapply(result,is.list)]
         write( setdiff(names(result),names(prototype)),paste(tmp_json_file,".missing"))
@@ -237,7 +242,6 @@ alertStream <- function(session) {
         return()
       }
     )
-    
     #  unlink(tmp_json_file)
     
     if(nrow(result) == 0)

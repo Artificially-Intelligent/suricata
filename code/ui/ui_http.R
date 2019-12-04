@@ -58,28 +58,13 @@ tabItem_http_dashboard <-tabItem(tabName = "http_dash",
 
 
 tabItem_http_table <-tabItem(tabName = "http_table",
-                             fluidRow(width = "100%",
-                                      column(
-                                        width = 6,h2(icon("table"), HTML("&nbsp;"),"HTTP Traffic Details")
-                                      ),
-                                      column(
-                                        width = 3,
-                                        offset = 3,
-                                        numericInput(
-                                          inputId = "maxrows",
-                                          label = "Rows to show", 
-                                          value =  25,
-                                          min = 0
-                                        )
-                                      )
-                             ),
       fluidRow(
         box(
           
           width = 12, status = "info", solidHeader = TRUE,
-          title = "http request details (last 30 min)",
+          title = "HTTP Traffic Details",
           div(style = 'overflow-y: scroll;overflow-x: scroll', 
-              tableOutput('http.table') 
+              DTOutput('http.table') 
               #%>% withSpinner(color="#0dc5c1")
           )
         )
@@ -87,13 +72,13 @@ tabItem_http_table <-tabItem(tabName = "http_table",
       fluidRow(
         column(
           width = 3,
-          #offset = 6,
+          #offset = 9,
           downloadButton("http.download_csv", "Download as CSV")
         )
       )
-#    verbatimTextOutput("http.raw"),
-    
-  )
+      #    verbatimTextOutput("http.raw"),
+      
+)
 
 
 

@@ -124,18 +124,14 @@ output$http.raw <- renderPrint({
 
 
 
-output$http.table <- renderTable({
+output$http.table <- renderDT({
   http_data() %>% 
-    tail(input$maxrows) %>%
-    remove_empty(which = c("cols")) %>%
-    select( timestamp,
-            flow_id,
-            in_iface,
-            src_ip,
-            src_port,
-            dest_ip,
-            dest_port, 
-            proto, starts_with("http")) %>%
+    mutate(timestamp = as_datetime(timestamp, tz = Sys.timezone(location = TRUE))  ) %>%
+    select(-flow_id,-event_type,-host) %>%
+    remove_empty(which = c("rows", "cols")) %>%
     as.data.frame()
-  
-}, digits = 1)
+}, 
+class = "display nowrap compact", # style
+filter = "top", # location of column filters
+options = list(scrollX = TRUE)
+)

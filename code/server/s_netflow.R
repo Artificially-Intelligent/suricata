@@ -133,8 +133,6 @@ filter = "top", # location of column filters
 options = list(scrollX = TRUE)
 )
 
-
-
 output$netflow.download_csv <- downloadHandler(
   filename = "netflow.csv",
   

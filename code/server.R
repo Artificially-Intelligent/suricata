@@ -152,19 +152,18 @@ auth0_server(function(input, output, session, options) {
     #             type = "tabs", 
     tabItems(
       tabItem_all_dashboard,
-      # tabItem_all_table,
-       tabItem_http_dashboard
-      ,
+      tabItem_all_table,
+      
+      tabItem_http_dashboard,
       tabItem_http_map,
-      # tabItem_http_table,
+      tabItem_http_table,
       tabItem_flow_dashboard,
       tabItem_flow_app_traffic,
       # tabItem_flow_map,
-      # tabItem_flow_table,
-      tabItem_netflow_dashboard
-      # ,
+      tabItem_flow_table,
+      tabItem_netflow_dashboard,
       # tabItem_netflow_map,
-      # tabItem_netflow_table
+      tabItem_netflow_table
     )
   })
   
