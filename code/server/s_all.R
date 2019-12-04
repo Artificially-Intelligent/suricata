@@ -18,8 +18,20 @@ output$all.rate <- renderValueBox({
   valueBox(
     value = formatC(download_rate, digits = 1, format = "f"),
     subtitle = paste("events per sec (last",max_age_minutes, "min)"),
-    icon = icon("area-chart"),
-    color = if (download_rate >= input$rateThreshold) "yellow" else "aqua"
+    icon = icon("area-chart")
+    #,
+    #color = if (download_rate >= input$rateThreshold) "yellow" else "aqua"
+  )
+})
+
+
+output$all.report_period <- renderValueBox({
+  valueBox(
+    all_data() %>%
+      summarise('report_period' = max(timestamp_num) - min(timestamp_num)) %>%
+        round(1),
+    "Duration of report (secs)",
+    icon = icon("desktop")
   )
 })
 

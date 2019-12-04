@@ -22,8 +22,9 @@ output$http.rate <- renderValueBox({
   valueBox(
     value = formatC(download_rate, digits = 1, format = "f"),
     subtitle = paste("Web request per sec (last",max_age_minutes, "min)"),
-    icon = icon("area-chart"),
-    color = if (download_rate >= input$rateThreshold) "yellow" else "aqua"
+    icon = icon("area-chart")
+    # ,
+    # color = if (download_rate >= input$rateThreshold) "yellow" else "aqua"
   )
 })
 

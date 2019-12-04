@@ -55,8 +55,8 @@ output$alert_map <- renderLeaflet({
 observeEvent(input$map_marker_click, {
   
   click<-input$map_marker_click
-   is_click <- if(is.null(click)) "FALSE" else "TRUE"
-   print(paste('clicked on a marker: ', is_click))
+  is_click <- if(is.null(click)) "FALSE" else "TRUE"
+  print(paste('clicked on a marker: ', is_click))
   
   if(is.null(click)) return()
   # leafletProxy("map") %>% remove_datatable_click_elements()
@@ -74,27 +74,21 @@ observeEvent(input$map_marker_click, {
 
 observe({
   click<-input$map_click
-   is_click <- if(is.null(click)) "FALSE" else "TRUE"
-   print(paste('clicked on a map: ', is_click))
+  is_click <- if(is.null(click)) "FALSE" else "TRUE"
+  print(paste('clicked on a map: ', is_click))
   v$selected_alert_id <- "none"
   
 })
 
 observeEvent({
-  print('saving user settings')
   input$map_zoom
   input$map_center
-  print('saving user settings done')
 }, {
-  print('saving changed user settings')
-  
   u$last_lng = input$map_center$lng
   u$last_lat = input$map_center$lat
   u$last_zoom <- input$map_zoom
-#  save_user_settings(u)
+  #  save_user_settings(u)
   
   print(input$map_zoom)
-  
-  print('saving changed user settings done')
 })
 

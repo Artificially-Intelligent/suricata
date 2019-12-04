@@ -13,7 +13,7 @@ tabItem_all_dashboard <-tabItem(tabName = "all_dash",
                                             valueBoxOutput(width = 3,"all.destinations"),
                                             valueBoxOutput(width = 3,"all.rate"),
                                             valueBoxOutput(width = 3,"all.requests"),
-                                            valueBoxOutput(width = 3,"all.bytes")
+                                            valueBoxOutput(width = 3,"all.report_period")
                                    ),
                                    fluidRow(
                                      width = "100%",

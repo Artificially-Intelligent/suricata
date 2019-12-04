@@ -11,7 +11,7 @@ dash_values <- reactiveValues(
 )
 
 prototype <- data.frame(
-  timestamp = character(),
+  timestamp = as_datetime(x = integer(0)),
   flow_id = character(),
   in_iface = character(),
   event_type = character(),
@@ -166,8 +166,14 @@ alertStream <- function(session) {
     }
     
     print(paste("new lines to load:",new_entries))
+    if(is.null(input$data_refresh_rate)){
+      invalidateLater(1000 * 10, session)
+    }else{
+      if(is.numeric(input$data_refresh_rate)){
+        invalidateLater(1000 * input$data_refresh_rate, session)
+      }
+    }
     
-    invalidateLater(1000 * data_refresh_secs, session)
     
     newlines <- ""
     if(new_entries > 0){
@@ -204,13 +210,22 @@ alertStream <- function(session) {
     tryCatch(
       {
         redis_last_timestamp_num <- isolate(dash_values$redis_last_timestamp_num)
-        result <- as.data.table(jsonlite::flatten(jsonlite::stream_in(file(tmp_json_file)))) %>%
-          mutate(timestamp_num = as.numeric(as_datetime(timestamp))) %>%
-          iplookup %>%
-          mutate(received = as.numeric(Sys.time())) %>%
-          filter(timestamp_num > redis_last_timestamp_num) %>%
-          subset_colclasses(colclasses = c("numeric","character","factor", "integer"))
-        
+        result <- jsonlite::stream_in(file(tmp_json_file)) %>%
+          jsonlite::flatten() 
+        if(nrow(result) == 0){
+          result <- prototype
+          return()
+        }else{
+          result <- result %>%
+            subset_colclasses( colclasses = c("numeric","character","factor", "integer")) %>%
+            mutate(timestamp = as_datetime(timestamp)) %>%
+            mutate(timestamp_num = as.numeric(timestamp)) %>%
+            iplookup %>%
+            mutate(received = as.numeric(Sys.time())) %>%
+            filter(timestamp_num > redis_last_timestamp_num) %>%
+            as.data.frame()
+            
+        }
         #result <- result[,!sapply(result,is.list)]
         write( setdiff(names(result),names(prototype)),paste(tmp_json_file,".missing"))
       }, 
@@ -219,6 +234,7 @@ alertStream <- function(session) {
         msg <- conditionMessage(c)
         message(c)
         invisible(structure(msg, class = "try-error"))
+        return()
       }
     )
     
@@ -232,7 +248,7 @@ alertStream <- function(session) {
     
     # Find names of missing columns and add them filled with NA's
     missing <- setdiff(names(prototype), names(result))  
-    if(length(missing)>0){result[missing] <- NA }                  
+    if(length(missing)>0){result[missing] <- NA }
     
     # Return result values for columns in prototype in a desired order 
     return(result[names(prototype)])
@@ -245,9 +261,9 @@ alertStream <- function(session) {
 alertData <- function(alrtStream, timeWindow, event_type = '') {
   shinySignals::reducePast(alrtStream, function(memo, df,e_type = event_type) {
     if(!is.null(df)){
-      if(nrow(df)  < default_load_size){
-        hide_waiter()
-      }
+      # if(nrow(df)  < default_load_size){
+      #   hide_waiter()
+      # }
       
       if(e_type == '')
         e_type <- event_types
@@ -318,12 +334,29 @@ firstTimestamp <- function(alrtStream, event_type = '') {
     if(e_type == '')
       e_type <- event_types
     
-    
     if(nrow(df) == 0)
       return(memo)
     (df %>%
         filter(event_type %in% e_type) %>% 
         summarise(timestamp = min(timestamp_num))
+    )[[1]]
+  }, 0)
+}
+
+# Count the total nrows of distinct alrtStream$dest_ip
+lastTimestamp <- function(alrtStream, event_type = '') {
+  shinySignals::reducePast(alrtStream, function(memo, df, e_type = event_type) {
+    if (is.null(df))
+      return(memo)
+    
+    if(e_type == '')
+      e_type <- event_types
+    
+    if(nrow(df) == 0)
+      return(memo)
+    (df %>%
+        filter(event_type %in% e_type) %>% 
+        summarise(timestamp = max(timestamp_num))
     )[[1]]
   }, 0)
 }

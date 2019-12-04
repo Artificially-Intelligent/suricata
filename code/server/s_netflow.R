@@ -18,8 +18,9 @@ output$netflow.rate <- renderValueBox({
   valueBox(
     value = formatC(download_rate, digits = 1, format = "f"),
     subtitle = paste("netflow request/sec (last",max_age_minutes, "min)"),
-    icon = icon("area-chart"),
-    color = if (download_rate >= input$rateThreshold) "yellow" else "aqua"
+    icon = icon("area-chart")
+    # ,
+    # color = if (download_rate >= input$rateThreshold) "yellow" else "aqua"
   )
 })
 
@@ -61,7 +62,7 @@ output$netflow.app_proto_bytes.barplot <- renderPlotly({
   
   p <- df %>%
     group_by(time,app_proto) %>%
-    summarise("Mbps" = sum(netflow.bytes)/131072,) %>%
+    summarise("Mbps" = round(sum(netflow.bytes)/131072,),3) %>%
     ggplot( aes(x=time, y=Mbps, colour=app_proto)) +
     geom_col() +
     #  geom_area(alpha=0.5) +

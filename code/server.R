@@ -46,9 +46,12 @@ auth0_server(function(input, output, session, options) {
   
   output$ui_sidebar <- renderUI({
     dashboardSidebar(
-      sliderInput("rateThreshold", "Warn when rate exceeds",
-                  min = 0, max = 50, value = 3, step = 0.1
-      ),
+      shinyWidgets::sliderTextInput("data_refresh_rate","Data refresh rate (seconds)",
+                     choices=c(0, 1, 5, 10, 30, 60, 120, 180,300,600,900,1800,3600,86400,"disabled"),
+                     selected=10, grid = T),
+      # sliderInput("data_refresh_rate", "Data refresh rate (s)",
+      #             min = 0, max = 3600, value = 10, step = 1
+      # ),
       sidebarMenu(
         id="tabset",
         menuItem("All Events",icon = icon("cube"),
@@ -225,6 +228,8 @@ auth0_server(function(input, output, session, options) {
   #so Record the time that the session started.
   start_timestamp <- as.numeric(Sys.time())
   first_timestamp <- firstTimestamp(alert_stream)
+  last_timestamp <- lastTimestamp(alert_stream)
+  
   event_count <- eventCount(alert_stream)
   
   output$all.event_count.bubbleplot <- renderBubbles({

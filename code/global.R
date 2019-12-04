@@ -11,6 +11,7 @@
   library(shinydashboard)
   library(bubbles)        # devtools::install_github("jcheng5/bubbles")
   
+  library(plotly)
   library(waiter)
   
   my_packages <- c('tidyverse','shiny', 'shinycssloaders', 
@@ -31,9 +32,9 @@
   app_directory <- './'
   project_name <- 'Suricata Dashboard'
   
-  max_history_load_size <- 100000
+  max_history_load_size <- 10000
   default_load_size <- 5000
-  data_refresh_secs <- 5
+  data_refresh_secs <- 60
   
   #filter data out if older than max_age_minutes
   max_age_minutes <- 30

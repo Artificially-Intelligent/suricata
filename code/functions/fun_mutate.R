@@ -40,6 +40,6 @@ iplookup <- function(x){
 }
 
 
-subset_colclasses <- function(DF, colclasses = c("numeric","character","factor", "integer")) {
-  DF[,sapply(DF, function(vec, test) class(vec) %in% test, test=colclasses)]
+subset_colclasses <- function(x, colclasses = c("numeric","character","factor", "integer","datetime")) {
+  x[,sapply(x, function(vec, test) class(vec) %in% test, test=colclasses)]
 }
