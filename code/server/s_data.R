@@ -183,12 +183,23 @@ alertStream <- function(session) {
       }
     }
     
+    
+    # parse_json_line <- function(json){
+    #   jsonlite::flatten(as.data.frame(jsonlite::parse_json(json[[1]])))
+    # }
+    
     newlines <- ""
     if(new_entries > 0){
       tryCatch(
         {
           #query_time <- r$TIME
-          newlines <- r$LRANGE(key='suricata',last_total_entries,last_total_entries + new_entries -1)
+          new_json <- r$LRANGE(key='suricata',last_total_entries,last_total_entries + new_entries -1)
+          
+          write(unlist(new_json),tmp_json_file)
+          new_lines <- jsonlite::stream_in(file(tmp_json_file)) %>%
+                jsonlite::flatten() 
+          #  unlink(tmp_json_file)
+          
         },
         error = function(c) {
           new_entries <- 0
@@ -200,7 +211,7 @@ alertStream <- function(session) {
       
       dash_values$redis_last_total <- last_total_entries + new_entries
     }
-    newlines
+    new_lines
     
   })
   
@@ -220,51 +231,43 @@ alertStream <- function(session) {
     if (length(new_lines) == 0)
       return()
     
-    write(unlist(new_lines),tmp_json_file)
-    
-    parse_json_line <- function(json){
-      jsonlite::flatten(as.data.frame(jsonlite::parse_json(json[[1]])))
-    }
-    
     tryCatch(
       {
-        result <- jsonlite::stream_in(file(tmp_json_file)) %>%
-          jsonlite::flatten() 
-        if(nrow(result) == 0){
-          result <- prototype
-          return()
-        }else{
-          result <- result %>%
-            subset_colclasses( colclasses = c("numeric","character","factor", "integer")) %>%
-            mutate(timestamp = as_datetime(timestamp)) %>%
-            mutate(timestamp_num = as.numeric(timestamp)) %>%
-            iplookup %>%
-            mutate(received = as.numeric(Sys.time())) %>%
-            filter(timestamp_num > redis_last_timestamp_num) %>%
-            as.data.frame()
-        }
+        result <- new_lines %>%
+          subset_colclasses( colclasses = c("numeric","character","factor", "integer")) %>%
+          mutate(timestamp = as_datetime(timestamp)) %>%
+          mutate(timestamp_num = as.numeric(timestamp)) %>%
+          iplookup %>%
+          mutate(received = as.numeric(Sys.time())) %>%
+          filter(timestamp_num > redis_last_timestamp_num) %>%
+          as.data.frame()
+        
         #result <- result[,!sapply(result,is.list)]
-        write( setdiff(names(result),names(prototype)),paste(tmp_json_file,".missing"))
+        
+        print(paste("Columns not in prototype:", 
+                    paste(collapse = ",",setdiff(names(result),names(prototype)))))
+        
+        if(nrow(result) == 0)
+          return()
+        
+        # Find names of missing columns and add them filled with NA's
+        missing <- setdiff(names(prototype), names(result))  
+        if(length(missing)>0){result[missing] <- NA }
+        
       }, 
       error = function(c) {
-        result <- prototype
+        
         msg <- conditionMessage(c)
         message(c)
         #invisible(structure(msg, class = "try-error"))
-        return()
+        # return(prototype)
+        
       }
     )
-    #  unlink(tmp_json_file)
     
-    if(nrow(result) == 0)
-      return()
     
     print(paste("last timestamp:",result[nrow(result),]$timestamp))
     dash_values$redis_last_timestamp_num <- result[nrow(result),]$timestamp_num
-    
-    # Find names of missing columns and add them filled with NA's
-    missing <- setdiff(names(prototype), names(result))  
-    if(length(missing)>0){result[missing] <- NA }
     
     # Return result values for columns in prototype in a desired order 
     return(result[names(prototype)])
