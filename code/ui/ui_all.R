@@ -31,7 +31,7 @@ tabItem_all_dashboard <-tabItem(tabName = "all_dash",
                                            width = 12,
                                            status = "info",
                                            solidHeader = TRUE,
-                                           title = "Top Event Types (last 5 min)",
+                                           title = paste("Top Event Types", sep = "" ),
                                            div(style = 'height:220px;overflow-y: scroll', 
                                                tableOutput('all.event_count.table')
                                                 #%>% withSpinner(color="#0dc5c1")
@@ -55,7 +55,7 @@ tabItem_all_table <-tabItem(tabName = "all_table",
       fluidRow(
         box(
           width = 12, status = "info", solidHeader = TRUE,
-          title = "All Event Details (last 30 min)",
+          title = "Event Details",
           DTOutput('all.table') 
         )
       ),

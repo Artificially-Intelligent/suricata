@@ -9,15 +9,15 @@ all_bytes_total <-  totalBytes(alert_stream)
 output$all.rate <- renderValueBox({
   # The downloadRate is the number of rows in all_data since
   # either first_timestamp or max_age_secs ago, whichever is later.
-  elapsed <- as.numeric(Sys.time()) - first_timestamp()
+  elapsed <- (all_data() %>%
+    summarise('report_period' = max(timestamp_num) - min(timestamp_num)))[[1]]
+    
+  as.numeric(Sys.time()) - first_timestamp()
   download_rate <- nrow(all_data()) / min(max_age_secs, elapsed)
-  
-  print(paste("first timestamp:",first_timestamp(),"elapsed:",min(max_age_secs, elapsed)))
-  
   
   valueBox(
     value = formatC(download_rate, digits = 1, format = "f"),
-    subtitle = paste("events per sec (last",max_age_minutes, "min)"),
+    subtitle = paste("Events/s (last", round(min(max_age_secs, elapsed)/60,0), "min)"),
     icon = icon("area-chart")
     #,
     #color = if (download_rate >= input$rateThreshold) "yellow" else "aqua"
@@ -25,13 +25,25 @@ output$all.rate <- renderValueBox({
 })
 
 
+output$all.report_period_text <- renderText({
+  time_period <- all_data() %>%
+    summarise('min_timestamp' = as_datetime(min(timestamp_num)), 'max_timestamp' = as_datetime(max(timestamp_num)))
+  
+    format(round(time_period$max_timestamp - time_period$min_timestamp,2))
+})
+
+
 output$all.report_period <- renderValueBox({
+
+    time_period <- all_data() %>%
+    summarise('min_timestamp' = as_datetime(min(timestamp_num)), 'max_timestamp' = as_datetime(max(timestamp_num)))
+    
+    period_text <- format(round(time_period$max_timestamp - time_period$min_timestamp,2))
+
   valueBox(
-    all_data() %>%
-      summarise('report_period' = max(timestamp_num) - min(timestamp_num)) %>%
-        round(1),
-    "Duration of report (secs)",
-    icon = icon("desktop")
+    period_text,
+    "Current Report Period Length",
+    icon = icon("clock")
   )
 })
 
@@ -44,21 +56,21 @@ output$all.destinations <- renderValueBox({
 })
 
 
+# output$all.requests <- renderValueBox({
+#   valueBox(
+#     all_request_count(),
+#     "Total Event Volume (Since Report Opened)",
+#     icon = icon("window-restore")
+#   )
+# })
+
+
 output$all.requests <- renderValueBox({
-  valueBox(
-    all_request_count(),
-    "Total Event Volume (requests)",
-    icon = icon("window-restore")
-  )
-})
-
-
-output$all.requests.inwindow <- renderValueBox({
   valueBox(
     all_data() %>%
       summarise('requests' = n()),
     #all_request_count(),
-    "Total Event Volume (requests)",
+    "Total Event Volume",
     icon = icon("window-restore")
   )
 })

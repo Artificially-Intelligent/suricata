@@ -159,12 +159,14 @@ alertStream <- function(session) {
     last_total_entries <- isolate(dash_values$redis_last_total)
     total_entries <- r$LLEN(key='suricata')
     print(paste("last total:", last_total_entries, "new total:",total_entries ))
-    if(last_total_entries == 0){
-      last_total_entries <- total_entries -  initial_history_load_size
-      new_entries <- initial_history_load_size 
+    if(last_total_entries == 0 || (last_total_entries + initial_history_load_size) < total_entries ){
+      new_entries <- initial_history_load_size
+      if(last_total_entries == 0)
+        last_total_entries <- total_entries -  (initial_history_load_size * 1)
     }else{
       if(last_total_entries > total_entries){
-        default_load_size
+        new_entries <- default_load_size
+        last_total_entries <- total_entries - default_load_size
       }else{
         if((total_entries - last_total_entries) > max_history_load_size)
           last_total_entries <- total_entries -  max_history_load_size
@@ -173,8 +175,8 @@ alertStream <- function(session) {
     }
         
     print(paste("new lines to load:",new_entries))
-    if(is.null(input$data_refresh_rate)){
-      invalidateLater(1000 * 10, session)
+    if(is.null(input$data_refresh_rate) || (last_total_entries + new_entries) < total_entries ){
+      invalidateLater(1000 * 3, session)
     }else{
       if(is.numeric(input$data_refresh_rate)){
         invalidateLater(1000 * input$data_refresh_rate, session)
@@ -204,10 +206,21 @@ alertStream <- function(session) {
   
   # Parses newLines() into data frame
   reactive({
-    if (length(newLines()) == 0)
+    
+    redis_last_timestamp_num <- isolate(dash_values$redis_last_timestamp_num)
+    
+    #new_lines <- future(newLines()) %>%
+    new_lines <- newLines()
+    
+    # result <- new_lines %>%
+    #   lapply(jsonlite::parse_json) %>%
+    #   lapply(unlist) 
+    # 
+    
+    if (length(new_lines) == 0)
       return()
     
-    write(unlist(newLines()),tmp_json_file)
+    write(unlist(new_lines),tmp_json_file)
     
     parse_json_line <- function(json){
       jsonlite::flatten(as.data.frame(jsonlite::parse_json(json[[1]])))
@@ -215,7 +228,6 @@ alertStream <- function(session) {
     
     tryCatch(
       {
-        redis_last_timestamp_num <- isolate(dash_values$redis_last_timestamp_num)
         result <- jsonlite::stream_in(file(tmp_json_file)) %>%
           jsonlite::flatten() 
         if(nrow(result) == 0){
@@ -238,7 +250,7 @@ alertStream <- function(session) {
         result <- prototype
         msg <- conditionMessage(c)
         message(c)
-        invisible(structure(msg, class = "try-error"))
+        #invisible(structure(msg, class = "try-error"))
         return()
       }
     )

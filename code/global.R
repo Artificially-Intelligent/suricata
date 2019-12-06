@@ -14,7 +14,15 @@
   library(plotly)
   library(waiter)
   
+  library(tidyjson)
+  
   library(hrbrthemes)
+  
+  library(jsonlite)
+  
+  library(promises)
+  library(future)
+  plan(multisession)
   
   my_packages <- c('tidyverse','shiny', 'shinycssloaders', 
                    'shinydashboard', 'shinydashboardPlus', 'shinyjs', 'shinyWidgets', 
@@ -35,7 +43,7 @@
   project_name <- 'Suricata Dashboard'
   
   max_history_load_size <- 100000
-  initial_history_load_size <- 20000
+  initial_history_load_size <- 15000
   default_load_size <- 5000
 
   #filter data out if older than max_age_minutes
