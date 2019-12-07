@@ -140,8 +140,6 @@ prototype <- data.frame(
 )
 
 
-
-
 alertStream <- function(session) {
   # Connect to data source
   
@@ -156,8 +154,10 @@ alertStream <- function(session) {
   # Returns new lines
   newLines <- reactive({
     
-    last_total_entries <- isolate(dash_values$redis_last_total)
     total_entries <- r$LLEN(key='suricata')
+    last_total_entries <- isolate(dash_values$redis_last_total)
+    redis_last_timestamp_num <- isolate(dash_values$redis_last_timestamp_num)
+    
     print(paste("last total:", last_total_entries, "new total:",total_entries ))
     if(last_total_entries == 0 || (last_total_entries + initial_history_load_size) < total_entries ){
       new_entries <- initial_history_load_size
@@ -165,8 +165,8 @@ alertStream <- function(session) {
         last_total_entries <- total_entries -  (initial_history_load_size * 1)
     }else{
       if(last_total_entries > total_entries){
-        new_entries <- default_load_size
-        last_total_entries <- total_entries - default_load_size
+        new_entries <- min(total_entries,default_load_size)
+        last_total_entries <- total_entries - new_entries
       }else{
         if((total_entries - last_total_entries) > max_history_load_size)
           last_total_entries <- total_entries -  max_history_load_size
@@ -174,7 +174,8 @@ alertStream <- function(session) {
       }
     }
         
-    print(paste("new lines to load:",new_entries))
+    print(paste("new lines to load:",new_entries,"new last total:", last_total_entries, "new total:",total_entries ))
+    
     if(is.null(input$data_refresh_rate) || (last_total_entries + new_entries) < total_entries ){
       invalidateLater(1000 * 3, session)
     }else{
@@ -188,40 +189,52 @@ alertStream <- function(session) {
     #   jsonlite::flatten(as.data.frame(jsonlite::parse_json(json[[1]])))
     # }
     
-    newlines <- ""
-    if(new_entries > 0){
-      tryCatch(
-        {
-          #query_time <- r$TIME
-          new_json <- r$LRANGE(key='suricata',last_total_entries,last_total_entries + new_entries -1)
+    dash_values$redis_last_total <- last_total_entries + new_entries
+    # future(
+      {
+        new_lines <- ''
           
-          write(unlist(new_json),tmp_json_file)
-          new_lines <- jsonlite::stream_in(file(tmp_json_file)) %>%
-                jsonlite::flatten() 
-          #  unlink(tmp_json_file)
-          
-        },
-        error = function(c) {
-          new_entries <- 0
-          msg <- conditionMessage(c)
-          message(c)
-          invisible(structure(msg, class = "try-error"))
-        }
-      )
-      
-      dash_values$redis_last_total <- last_total_entries + new_entries
-    }
-    new_lines
-    
+        if(new_entries > 0){
+          tryCatch(
+            {
+                {
+                  new_json <- r$LRANGE(key='suricata',last_total_entries,last_total_entries + new_entries -1)
+                  
+                  write(unlist(new_json),tmp_json_file)
+                  
+                  new_lines <- jsonlite::stream_in(file(tmp_json_file)) %>%
+                    jsonlite::flatten() 
+                    unlink(tmp_json_file)
+                }
+              #query_time <- r$TIME
+              
+            },
+            error = function(c) {
+              new_entries <- 0
+              msg <- conditionMessage(c)
+              message(c)
+              invisible(structure(msg, class = "try-error"))
+            }
+          )
+        } 
+        print(paste("new_lines:",nrow(new_lines)))
+        new_lines
+      }
+     # )
   })
   
   # Parses newLines() into data frame
   reactive({
-    
+    redis_last_index <- isolate(dash_values$redis_last_total)
     redis_last_timestamp_num <- isolate(dash_values$redis_last_timestamp_num)
+    # plan(multiprocess)
+    # new_lines <- future(newLines(redis_last_index = redis_last_index)) 
     
-    #new_lines <- future(newLines()) %>%
     new_lines <- newLines()
+    
+    
+    
+    
     
     # result <- new_lines %>%
     #   lapply(jsonlite::parse_json) %>%

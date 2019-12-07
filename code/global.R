@@ -22,7 +22,8 @@
   
   library(promises)
   library(future)
-  plan(multisession)
+  
+  plan(multiprocess)
   
   my_packages <- c('tidyverse','shiny', 'shinycssloaders', 
                    'shinydashboard', 'shinydashboardPlus', 'shinyjs', 'shinyWidgets', 
