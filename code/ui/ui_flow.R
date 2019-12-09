@@ -87,7 +87,7 @@ tabItem_flow_app_traffic <-tabItem(tabName = "flow_app_traffic",
                                               width = 12, status = "info", solidHeader = TRUE,
                                               title = "Traffic to Client by Protocol (last 30 min)",
                                               plotlyOutput(
-                                                "flow.app_proto_client_bytes.barplot", 
+                                                "flow.app_proto_server_bytes2.barplot", 
                                                 width = "100%", height = 350)
                                             )
                                      )

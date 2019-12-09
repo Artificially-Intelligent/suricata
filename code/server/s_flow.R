@@ -101,6 +101,8 @@ output$flow.raw <- renderPrint({
 
 
 output$flow.table <- renderDT({
+  updateSliderTextInput(session,"data_refresh_rate",selected = 120) 
+  
   flow_data() %>% 
     mutate(timestamp = as_datetime(timestamp, tz = Sys.timezone(location = TRUE)),  
            flow.start = as_datetime(flow.start, tz = Sys.timezone(location = TRUE)),  

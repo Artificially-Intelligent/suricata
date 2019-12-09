@@ -1,6 +1,7 @@
 ### all 
 
 all_data <- alertData(alert_stream, max_age_secs)
+data$events_all <- all_data
 
 all_request_count <- requestCount(alert_stream)
 all_destination_count <- destinationCount(alert_stream)
@@ -9,11 +10,11 @@ all_bytes_total <-  totalBytes(alert_stream)
 output$all.rate <- renderValueBox({
   # The downloadRate is the number of rows in all_data since
   # either first_timestamp or max_age_secs ago, whichever is later.
-  elapsed <- (all_data() %>%
+  elapsed <- (data$events_all() %>%
     summarise('report_period' = max(timestamp_num) - min(timestamp_num)))[[1]]
     
   as.numeric(Sys.time()) - first_timestamp()
-  download_rate <- nrow(all_data()) / min(max_age_secs, elapsed)
+  download_rate <- nrow(data$events_all() ) / min(max_age_secs, elapsed)
   
   valueBox(
     value = formatC(download_rate, digits = 1, format = "f"),
@@ -26,7 +27,7 @@ output$all.rate <- renderValueBox({
 
 
 output$all.report_period_text <- renderText({
-  time_period <- all_data() %>%
+  time_period <- data$events_all()  %>%
     summarise('min_timestamp' = as_datetime(min(timestamp_num)), 'max_timestamp' = as_datetime(max(timestamp_num)))
   
     format(round(time_period$max_timestamp - time_period$min_timestamp,2))
@@ -35,7 +36,7 @@ output$all.report_period_text <- renderText({
 
 output$all.report_period <- renderValueBox({
 
-    time_period <- all_data() %>%
+    time_period <- data$events_all()  %>%
     summarise('min_timestamp' = as_datetime(min(timestamp_num)), 'max_timestamp' = as_datetime(max(timestamp_num)))
     
     period_text <- format(round(time_period$max_timestamp - time_period$min_timestamp,2))
@@ -67,7 +68,7 @@ output$all.destinations <- renderValueBox({
 
 output$all.requests <- renderValueBox({
   valueBox(
-    all_data() %>%
+    data$events_all()  %>%
       summarise('requests' = n()),
     #all_request_count(),
     "Total Event Volume",
@@ -86,11 +87,11 @@ output$all.bytes <- renderValueBox({
 
 
 output$all.dest_ip.bubbleplot <- renderBubbles({
-  if (nrow(all_data()) == 0)
+  if (nrow(data$events_all() ) == 0)
     return()
   
-  order <- unique(all_data()$dest_ip)
-  df <- all_data() %>%
+  order <- unique(data$events_all() $dest_ip)
+  df <- data$events_all()  %>%
     group_by(dest_ip) %>%
     tally() %>%
     arrange(desc(n), tolower(dest_ip)) %>%
@@ -101,22 +102,22 @@ output$all.dest_ip.bubbleplot <- renderBubbles({
 })
 
 output$all.dest_ip.table <- renderTable({
-  all_data() %>%
+  data$events_all()  %>%
     group_by(dest_ip) %>%
     tally() %>%
     arrange(desc(n), tolower(dest_ip)) %>%
-    mutate(percentage = n / nrow(all_data()) * 100) %>%
+    mutate(percentage = n / nrow(data$events_all() ) * 100) %>%
     select("Destination IP" = dest_ip, "% of requests" = percentage) %>%
     as.data.frame() %>%
     head(15)
 }, digits = 1, options = list(scrollX = TRUE))
 
 output$all.event_count.table <- renderTable({
-  all_data() %>%
+  data$events_all()  %>%
     group_by(event_type) %>%
     tally() %>%
     arrange(desc(n), tolower(event_type)) %>%
-    mutate(percentage = n / nrow(all_data()) * 100) %>%
+    mutate(percentage = n / nrow(data$events_all() ) * 100) %>%
     select("Event Type" = event_type, "% of events" = percentage) %>%
     as.data.frame() %>%
     head(15)
@@ -142,7 +143,8 @@ output$all.raw <- renderPrint({
 })
 
 output$all.table <- renderDT({
-  all_data() %>%
+  updateSliderTextInput(session,"data_refresh_rate",selected = 120) 
+  data$events_all()  %>%
     remove_empty(which = c("rows", "cols")) %>%
     as.data.frame()
   }, 
@@ -157,7 +159,7 @@ output$all.download_csv <- downloadHandler(
   filename = "all.csv",
   
   content = function(file) {
-      all_data() %>%
+      data$events_all()  %>%
       remove_empty(which = c("rows", "cols")) %>%
       # tail(input$maxrows) %>%
       write.csv(file)

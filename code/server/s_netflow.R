@@ -122,6 +122,8 @@ output$netflow.raw <- renderPrint({
 
 
 output$netflow.table <- renderDT({
+  updateSliderTextInput(session,"data_refresh_rate",selected = 120) 
+  
   netflow_data() %>% 
     mutate(timestamp = as_datetime(timestamp, tz = Sys.timezone(location = TRUE))  ) %>%
     select(-flow_id,-event_type,-host) %>%

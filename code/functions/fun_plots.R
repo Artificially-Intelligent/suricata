@@ -8,18 +8,19 @@ weather_plot_f <- function(df){
 }
 
 addCircles_f <- function(map, df){
-  map %>% addCircleMarkers(data = df, 
-                           # lng = df$lng,
-                           # lat = df$lat,
-                           layerId = df$property_id,
-                           group = "property_markers",
+df_grouped <- df
+  map %>% addCircleMarkers(data = df_grouped, 
+                           lng = df_grouped$dest_long,
+                           lat = df_grouped$dest_lat,
+                           layerId = df_grouped$dest_ip,
+                           group = "dest_markers",
                            stroke = FALSE,
                            fillOpacity = 0.8,
-                           radius = 10,
-                           fillColor = df$property_colour,
+                           radius = 5 + (df_grouped$total_bytes_pct*10),
+                           fillColor = df_grouped$dest_colour,
                            #icon = ~map_icons[df$pt_domr],
                            #clusterOptions = markerClusterOptions(iconCreateFunction=JS(clusterJS)) #,
-                           popup = popup_f(df),
+                           popup = df_grouped$popup_html,
                            popupOptions = popupOptions(closeButton = FALSE), 
                            options = pathOptions(pane = "top_circles")
   )
@@ -27,29 +28,24 @@ addCircles_f <- function(map, df){
 
 
 popup_f <- function(df){
-  js <- "javascript:$('#map_view_btn').show();$('#sales_history_box').show();$('#table').show();$('#list_view_btn').hide();$('#map').hide();"
-  paste('<div class="prop_details">
-          ',  popup_html_f(df),'
-        </div>',
-        "<a href=", js,  " class ='more_btn'>more..</a>"
+  # js <- "javascript:$('#map_view_btn').show();$('#sales_history_box').show();$('#table').show();$('#list_view_btn').hide();$('#map').hide();"
+  paste(popup_html_f(df),
+        # ,"<a href=", js,  " class ='more_btn'>more..</a>"
         
   )
 }
 
 popup_html_f <- function(df){
-  summary <-  df %>% 
-      group_by(country_code, city, http.hostname, http.http_method, http.status, http.http_user_agent, dest_ip, dest_port) %>%
-      summarize(requests = n(), bytes =sum(http.length))
+  summary <- df 
   paste('<div class="alert_details">
-          <div class="alert_details_name"><h4>', summary$city, " (", summary$country_code , ')<h4></div>
-          <div class="alert_details">', summary$http.hostname, '</div>
-          <div class="alert_details">', summary$http.http_method, '</div>
-          <div class="alert_details">', summary$http.status, '</div>
-          <div class="alert_details">', summary$http.http_user_agent, '</div>
-          <div class="alert_details">', summary$dest_ip, '</div>
-          <div class="alert_details">', summary$dest_port, '</div>
-          <div class="alert_details">', summary$requests, '</div>
-          <div class="alert_details">', summary$bytes, '</div>
+          <div class="alert_details_name"><h4>', summary$dest_city, " (", summary$dest_country_code , ')<h4></div>
+          <div class="alert_details">', summary$attribute.list.1, '</div>
+          <div class="alert_details">', summary$attribute.list.2, '</div>
+          <div class="alert_details">', summary$attribute.list.3, '</div>
+          <div class="alert_details">', summary$attribute.list.4, '</div>
+          <div class="alert_details">IP Address', summary$dest_ip, '</div>
+          <div class="alert_details">Requests:', summary$requests, '</div>
+          <div class="alert_details">Bytes', summary$bytes, '</div>
           '
   )
   

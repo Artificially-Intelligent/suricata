@@ -43,7 +43,7 @@
   app_directory <- './'
   project_name <- 'Suricata Dashboard'
   
-  max_history_load_size <- 100000
+  max_history_load_size <- 2000
   initial_history_load_size <- 15000
   default_load_size <- 5000
 

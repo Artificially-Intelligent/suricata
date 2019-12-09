@@ -125,6 +125,8 @@ output$http.raw <- renderPrint({
 
 
 output$http.table <- renderDT({
+  updateSliderTextInput(session,"data_refresh_rate",selected = 120) 
+  
   http_data() %>% 
     mutate(timestamp = as_datetime(timestamp, tz = Sys.timezone(location = TRUE))  ) %>%
     select(-flow_id,-event_type,-host) %>%

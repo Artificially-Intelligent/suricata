@@ -47,8 +47,8 @@ auth0_server(function(input, output, session, options) {
   output$ui_sidebar <- renderUI({
     dashboardSidebar(
       shinyWidgets::sliderTextInput("data_refresh_rate","Data refresh rate (seconds)",
-                     choices=c(0, 1, 5, 10, 30, 60, 120, 180,300,600,900,1800,3600,86400,"disabled"),
-                     selected=10, grid = T),
+                     choices=c(0, 1, 3, 5, 10, 30, 60, 120, 180,300,600,900,1800,3600,86400,"disabled"),
+                     selected=5, grid = T),
       # sliderInput("data_refresh_rate", "Data refresh rate (s)",
       #             min = 0, max = 3600, value = 10, step = 1
       # ),
@@ -182,6 +182,9 @@ auth0_server(function(input, output, session, options) {
     selected_alert_id = NULL
   )
   
+  data <- reactiveValues(
+  )
+  
   u <- reactiveValues(
     # User settings to be saved between logins
     user_id =  "",
@@ -206,7 +209,7 @@ auth0_server(function(input, output, session, options) {
   source('server/s_http.R', local = TRUE)
   source('server/s_flow.R', local = TRUE)
   source('server/s_netflow.R', local = TRUE)
-  # source('server/s_dns.R', local = TRUE)
+  source('server/s_dns.R', local = TRUE)
 
 
   source('server/s_http_map.R', local = TRUE)
@@ -222,7 +225,6 @@ auth0_server(function(input, output, session, options) {
   # new rows from a suricate event log stored in redis; each call only 
   # returns new rows occouring after the last of those delivered prior.
   alert_stream <- alertStream(session)
-  
   
   #so Record the time that the session started.
   start_timestamp <- as.numeric(Sys.time())
