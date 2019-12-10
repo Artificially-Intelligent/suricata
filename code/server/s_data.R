@@ -249,7 +249,10 @@ alertStream <- function(session) {
     # future(
       {
         new_lines <- ''
-          
+        
+        if (! redux::redis_available(host = 'unraiden.local'))
+          return(data_row_template)  
+        
         if(new_entries > 0){
           tryCatch(
             {

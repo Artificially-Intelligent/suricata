@@ -87,7 +87,7 @@ tabItem_flow_app_traffic <-tabItem(tabName = "flow_app_traffic",
                                               width = 12, status = "info", solidHeader = TRUE,
                                               title = "Traffic to Client by Protocol (last 30 min)",
                                               plotlyOutput(
-                                                "flow.app_proto_server_bytes2.barplot", 
+                                                "flow.app_proto_client_bytes.barplot", 
                                                 width = "100%", height = 350)
                                             )
                                      )
@@ -177,4 +177,57 @@ tabItem_flow_map <-
             )
           )
   )
+
+
+tabItem_flow_map <-
+  tabItem(tabName = "flow_map",
+          fluidRow(
+            column(width = 6,
+                   h2(icon("globe-asia"), HTML("&nbsp;"),"Traffic Flow Destination Map")
+            )
+          ),
+          tabPanel(
+            'Map', br(),
+            fluidRow(
+              box(
+                title = NULL, width = 12, background = NULL,
+                leafletOutput(outputId = "flow_map") 
+                %>% withSpinner(color="#0dc5c1")
+                ,
+                br(),
+                fluidRow(
+                  column(width = 6,
+                         actionBttn(
+                           inputId = "zoom_australia_button",
+                           label = "Australia", 
+                           style = "gradient",
+                           color = "primary",
+                           icon = icon("search-location")
+                         )
+                  ),
+                  column(width = 4,
+                         fluidRow(
+                           textInput(
+                             inputId = "pulse_icon_text",
+                             label = "Enter address"
+                           ),
+                           textOutput("pulse_icon_message")
+                         )
+                  ),
+                  column(width = 2,
+                         actionBttn(
+                           inputId = "pulse_icon_button",
+                           label = "Go",
+                           style = "gradient",
+                           color = "primary"
+                         ))
+                ),
+                br(),
+                dataTableOutput("geo_testmap_dt"),
+                br()
+              )
+            )
+          )
+  )
+
 

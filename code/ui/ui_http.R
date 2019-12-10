@@ -101,7 +101,7 @@ tabItem_http_map <-
             fluidRow(
               box(
                 title = NULL, width = 12, background = NULL,
-                leafletOutput(outputId = "alert_map") 
+                leafletOutput(outputId = "http_map") 
                 %>% withSpinner(color="#0dc5c1")
                 ,
                 br(),

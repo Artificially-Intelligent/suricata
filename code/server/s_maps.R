@@ -9,7 +9,7 @@ output$http_map <- renderLeaflet({
   
   lat_bounds <- c(max(c(df$src_lat,df$dest_lat)), min(c(df$src_lat,df$dest_lat)))
   lng_bounds <- c(max(c(df$src_long,df$dest_long)), min(c(df$src_lat,df$dest_long)))
-  
+  # browser()
   m <- leaflet() %>%
     addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
     addMapPane("top_circles", zIndex = 430) %>%
@@ -20,6 +20,48 @@ output$http_map <- renderLeaflet({
   
   m
 })
+
+# starting map
+output$flow_map <- renderLeaflet({
+  print('rendering map step 1')
+  #user_settings <- user_settings()
+  df <-mapData(flow_data(),event_type = 'flow')
+
+  lat_bounds <- c(max(c(df$src_lat,df$dest_lat)), min(c(df$src_lat,df$dest_lat)))
+  lng_bounds <- c(max(c(df$src_long,df$dest_long)), min(c(df$src_lat,df$dest_long)))
+
+  m <- leaflet() %>%
+    addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+    addMapPane("top_circles", zIndex = 430) %>%
+
+    #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
+    fitBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2]) %>%
+    addCircles_f(df)
+
+  m
+})
+
+
+# starting map
+output$netflow_map <- renderLeaflet({
+  print('rendering map step 1')
+  #user_settings <- user_settings()
+  df <-mapData(netflow_data(),event_type = 'netflow')
+
+  lat_bounds <- c(max(c(df$src_lat,df$dest_lat)), min(c(df$src_lat,df$dest_lat)))
+  lng_bounds <- c(max(c(df$src_long,df$dest_long)), min(c(df$src_lat,df$dest_long)))
+
+  m <- leaflet() %>%
+    addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+    addMapPane("top_circles", zIndex = 430) %>%
+
+    #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
+    fitBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2]) %>%
+    addCircles_f(df)
+
+  m
+})
+
 
 
 #### Click on marker to select, map to deselect a property ####

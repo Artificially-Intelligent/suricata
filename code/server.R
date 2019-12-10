@@ -158,10 +158,10 @@ auth0_server(function(input, output, session, options) {
       tabItem_http_table,
       tabItem_flow_dashboard,
       tabItem_flow_app_traffic,
-      # tabItem_flow_map,
+      tabItem_flow_map,
       tabItem_flow_table,
       tabItem_netflow_dashboard,
-      # tabItem_netflow_map,
+      tabItem_netflow_map,
       tabItem_netflow_table
     )
   })
@@ -211,8 +211,9 @@ auth0_server(function(input, output, session, options) {
   source('server/s_dns.R', local = TRUE)
 
 
-  source('server/s_http_map.R', local = TRUE)
-
+  # source('server/s_maps.R', local = TRUE)
+  source('server/s_maps.R', local = TRUE)
+  
   source('server/s_user.R', local = TRUE)
   
   # Max age of data (default = 5 minutes)
