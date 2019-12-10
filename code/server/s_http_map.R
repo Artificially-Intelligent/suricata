@@ -3,34 +3,9 @@
 
 # starting map
 output$alert_map <- renderLeaflet({
-  if(as.numeric(isolate(input$data_refresh_rate) < 30))
-    updateSliderTextInput(session,"data_refresh_rate",selected = 60) 
-  
   print('rendering map step 1')
   #user_settings <- user_settings()
   df <-mapData(http_data(),event_type = 'http')
-  
-  print(paste("map df rows:"),nrow(df))
-  
-  # df <- http_data() %>%
-  #   group_by(dest_country_name, dest_country_code, dest_city, dest_ip,dest_long,dest_lat) %>%
-  #   summarise(attribute.list.1 =  paste(Filter(Negate(is.na),unique( http.hostname)),collapse =',\n'),
-  #             attribute.list.2 =  paste(Filter(Negate(is.na),unique( http.server)),collapse =', '),
-  #             attribute.list.3 =  paste(Filter(Negate(is.na),unique( http.http_method)),collapse =', '),
-  #             requests = n(), 
-  #             bytes = sum(http.length))
-  # 
-  # df_by_src <- http_data() %>%
-  #   group_by(src_country_name, src_country_code, src_city, src_ip,src_long,src_lat) %>%
-  #   summarise(attribute.list.1 =  paste(Filter(Negate(is.na),unique( http.hostname)),collapse =','),
-  #             attribute.list.2 =  paste(Filter(Negate(is.na),unique( http.server)),collapse =','),
-  #             attribute.list.3 =  paste(Filter(Negate(is.na),unique( http.http_method)),collapse =','),
-  #             requests = n(), 
-  #             bytes = sum(http.length))
-  # 
-  
-  
-  print(paste('rows:',nrow(df)))
   
   lat_bounds <- c(max(c(df$src_lat,df$dest_lat)), min(c(df$src_lat,df$dest_lat)))
   lng_bounds <- c(max(c(df$src_long,df$dest_long)), min(c(df$src_lat,df$dest_long)))

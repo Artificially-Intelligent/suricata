@@ -44,3 +44,8 @@ put_mysql_data <- function(df, table_name, db_name){
   dbSendQuery(db_connection(db_name), sql_string)
   close_mysql_connections()
 }
+
+
+update_refresh_rate <- function( output_type = 'dash', inputId = "data_refresh_rate", refresh_rates_df = refresh_rates){
+   
+}

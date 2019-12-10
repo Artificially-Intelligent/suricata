@@ -201,6 +201,7 @@ data_row_template <- data.frame(
 alertStream <- function(session) {
   # Connect to data source
   
+  
   if (! redux::redis_available(host = 'unraiden.local'))
     return(data_row_template)
   
@@ -212,6 +213,8 @@ alertStream <- function(session) {
   # 
   # Returns new lines
   newLines <- reactive({
+    
+    input$data_refresh_rate  
     
     redis_index_end <- r$LLEN(key='suricata')
     redis_index_last_loaded <- isolate(data_load_status$redis_index_last_loaded)
@@ -238,18 +241,10 @@ alertStream <- function(session) {
     
     print(paste("load index_start:", redis_index_load_start, "new entries to load:",new_entries,  "current index_end:",redis_index_end ))
     
-    if(is.null(input$data_refresh_rate) || (redis_index_last_loaded + new_entries) < redis_index_end ){
-      invalidateLater(1000 * 3, session)
-    }else{
-      if(is.numeric(input$data_refresh_rate)){
-        invalidateLater(1000 * input$data_refresh_rate, session)
-      }
-    }
+    data_load_status$full_load <- TRUE
     
-    
-    # parse_json_line <- function(json){
-    #   jsonlite::flatten(as.data.frame(jsonlite::parse_json(json[[1]])))
-    # }
+    if(is.null(input$data_refresh_rate) || ! is.numeric(input$data_refresh_rate) ||  (redis_index_last_loaded + new_entries) < redis_index_end )
+      data_load_status$full_load <- FALSE
     
     # future(
       {
@@ -299,6 +294,13 @@ alertStream <- function(session) {
           )
         } 
         print(paste("new_lines:",nrow(new_lines)))
+        
+        if(! isolate(data_load_status$full_load)){
+          invalidateLater(1000 * 1, session)
+        }else{
+          invalidateLater(1000 * isolate(input$data_refresh_rate), session)
+        }
+        
         new_lines
       }
      # )
@@ -307,6 +309,9 @@ alertStream <- function(session) {
   # Parses newLines() into data frame
   reactive({
     new_lines <- newLines()
+    
+    if(is.null(new_lines) || nrow(new_lines) == 0)
+      return(data_row_template)
     
     location_fields <- c('country_name','country_code','city','lat','long')
     location_dest <- rgeolocate::ip2location(ips = new_lines$dest_ip
@@ -320,6 +325,8 @@ alertStream <- function(session) {
                                              , fields = location_fields
     )
     names(location_src) <- paste("src", location_fields,sep="_")
+    
+    
     
     formatted_lines <- cbind(new_lines, location_dest,location_src) %>%
       jsonlite::flatten()
@@ -556,7 +563,7 @@ mapData <- function(alrtData, event_type = '') {
     packets = max(sum(flow.pkts_toclient, na.rm=T ) + sum(flow.pkts_toserver, na.rm=T ),
                   sum(netflow.pkts, na.rm=T )),
   ) %>%
-    mutate(total_bytes_pct = bytes/total_bytes)
+    mutate(total_bytes_pct = round(bytes/total_bytes,2))
   
   return(
     df_grouped

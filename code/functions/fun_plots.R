@@ -16,7 +16,7 @@ df_grouped <- df
                            group = "dest_markers",
                            stroke = FALSE,
                            fillOpacity = 0.8,
-                           radius = 5 + (df_grouped$total_bytes_pct*10),
+                           radius = round(4 + (df_grouped$total_bytes_pct*16),0),
                            fillColor = df_grouped$dest_colour,
                            #icon = ~map_icons[df$pt_domr],
                            #clusterOptions = markerClusterOptions(iconCreateFunction=JS(clusterJS)) #,

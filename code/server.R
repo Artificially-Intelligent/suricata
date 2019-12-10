@@ -52,8 +52,7 @@ auth0_server(function(input, output, session, options) {
       # sliderInput("data_refresh_rate", "Data refresh rate (s)",
       #             min = 0, max = 3600, value = 10, step = 1
       # ),
-      sidebarMenu(
-        id="tabset",
+      sidebarMenu(id = "tabs", 
         menuItem("All Events",icon = icon("cube"),
                  menuSubItem("Event Dashboard", 
                              tabName = "all_dash", 
@@ -225,6 +224,62 @@ auth0_server(function(input, output, session, options) {
   # new rows from a suricate event log stored in redis; each call only 
   # returns new rows occouring after the last of those delivered prior.
   alert_stream <- alertStream(session)
+  
+  ###
+  # Set minimum refresh rate for tabs which are slower to render
+  #
+  #
+  
+  refresh_rates <- data.frame(rbind(c(-1,30,30,-1,-1),c(1,60,60,1,1)), row.names=c('min','default'))
+  names(refresh_rates) <- c('default','table','map','dash','plot')
+  
+  reactive({
+    browser()
+    v$selected_tab
+    inputId <- "data_refresh_rate"
+    #v$selected_tab <- session$getCurrentOutputInfo()$name
+    output_type <- str_split(v$selected_tab,'_')[[1]][2]
+    
+    if(v$selected_tab != session$getCurrentOutputInfo()$name)
+      v$selected_tab <-  session$getCurrentOutputInfo()$name    
+    output_type <- str_split(v$selected_tab,'_')[[1]][2]
+print(v$selected_tab)
+print(output_type)
+    if( ! output_type %in% names(refresh_rates)){
+      output_type <- 'default'
+      print('update_refresh_rate given invalid value for output_type. using default value: "dash"')
+    }
+
+      if(is.null(isolate(input[inputId])))
+        print(paste("input object" , inputId ,"does not exist"))
+      
+      # if(
+      # ! is.null(isolate(input[inputId]))
+      # && suppressWarnings(!is.na(as.numeric(isolate(input$data_refresh_rate)))) 
+      # &&
+      # as.numeric(isolate(input$data_refresh_rate) < refresh_rates_df['min',output_type])){
+      print(paste('Updating refresh rate from',isolate(input$data_refresh_rate), 'to',refresh_rates['min',output_type] ))
+      updateSliderTextInput(session, "data_refresh_rate", selected = refresh_rates_df['default',output_type]) 
+      # }
+})
+  
+                         # tabName = "all_dash", 
+                         # tabName = "all_table", 
+                         # tabName = "http_dash", 
+                         # tabName = "http_map", 
+                         # tabName = "http_table", 
+                         # tabName = "flow_dash", 
+                         # tabName = "flow_app_traffic", 
+                         # tabName = "flow_map", 
+                         # tabName = "flow_table", 
+                         # tabName = "netflow_dash", 
+                         # tabName = "netflow_map", 
+                         # tabName = "netflow_table", 
+                         # tabName = "alert_dash", 
+                         # tabName = "alert_map", 
+                         # tabName = "drop_dash", 
+                         # tabName = "drop_map", 
+                         # 
   
   #so Record the time that the session started.
   start_timestamp <- as.numeric(Sys.time())

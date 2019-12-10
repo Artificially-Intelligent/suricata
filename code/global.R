@@ -44,9 +44,11 @@
   project_name <- 'Suricata Dashboard'
   
   max_history_load_size <- 2000
-  initial_history_load_size <- 15000
+  initial_history_load_size <- 3000
   default_load_size <- 5000
-
+  
+  
+  
   #filter data out if older than max_age_minutes
   max_age_minutes <- 30
   
