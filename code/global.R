@@ -43,8 +43,8 @@
   app_directory <- './'
   project_name <- 'Suricata Dashboard'
   
-  max_history_load_size <- 2000
-  initial_history_load_size <- 15000
+  max_history_load_size <- 10000
+  initial_history_load_size <- 1500
   default_load_size <- 5000
   
   
@@ -90,10 +90,11 @@
   source('functions/fun_sql.R')
   source('functions/fun_auth0.R')
   
-  
-  source('ui/ui_all.R')
-  source('ui/ui_http.R')
-  source('ui/ui_flow.R')
-  source('ui/ui_netflow.R')
+  source('ui/ui_event.R')
+  # source('ui/ui_all.R')
+  # source('ui/ui_http.R')
+  # source('ui/ui_flow.R')
+  # source('ui/ui_netflow.R')
+  # source('ui/ui_alert.R')
   print(paste("global.R finished"))
   

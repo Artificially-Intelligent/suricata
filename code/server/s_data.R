@@ -12,7 +12,7 @@ data_load_status <- reactiveValues(
 layered_data_row_template <- data.frame(
   timestamp = as_datetime(x = integer(0)),
   timestamp_num = numeric(), 
-    flow_id = character(),
+  flow_id = character(),
   in_iface = character(),
   event_type = character(),
   src_ip = character(),
@@ -73,7 +73,7 @@ data_row_template <- data.frame(
   dest_long = numeric(),
   proto = character(),
   host = character(),
-  app_proto = character(),
+  app_proto = factor(),
   tx_id = character(), 
   payload = character(),
   payload_printable = character(),
@@ -214,8 +214,6 @@ alertStream <- function(session) {
   # Returns new lines
   newLines <- reactive({
     
-    input$data_refresh_rate  
-    
     redis_index_end <- r$LLEN(key='suricata')
     redis_index_last_loaded <- isolate(data_load_status$redis_index_last_loaded)
     redis_timestamp_num_last_loaded <- isolate(data_load_status$redis_timestamp_last_loaded)
@@ -224,7 +222,9 @@ alertStream <- function(session) {
     
     redis_index_load_start <- redis_index_last_loaded
     
-    if(redis_index_last_loaded == 0 || (redis_index_last_loaded + initial_history_load_size) < redis_index_end ){
+    if(redis_index_last_loaded == 0 
+       # || (redis_index_last_loaded + initial_history_load_size) < redis_index_end 
+       ){
       new_entries <- initial_history_load_size
       if(redis_index_last_loaded == 0)
         redis_index_load_start <- redis_index_end -  (initial_history_load_size * 1)
@@ -241,16 +241,12 @@ alertStream <- function(session) {
     
     print(paste("load index_start:", redis_index_load_start, "new entries to load:",new_entries,  "current index_end:",redis_index_end ))
     
-    data_load_status$full_load <- TRUE
-    
-    if(is.null(input$data_refresh_rate) || ! is.numeric(input$data_refresh_rate) ||  (redis_index_last_loaded + new_entries) < redis_index_end )
-      data_load_status$full_load <- FALSE
-    
+     
     # future(
       {
         new_lines <- ''
         
-        if (! redux::redis_available(host = 'unraiden.local'))
+        if (! redux::redis_available(host = 'unraiden.local') ||  redis_index_end == 0)
           return(data_row_template)  
         
         if(new_entries > 0){
@@ -298,8 +294,13 @@ alertStream <- function(session) {
         } 
         print(paste("new_lines:",nrow(new_lines)))
         
+        data_load_status$full_load <- TRUE
+        
+        if(is.null(input$data_refresh_rate) || ! is.numeric(input$data_refresh_rate) ||  (redis_index_last_loaded + new_entries) < redis_index_end )
+          data_load_status$full_load <- FALSE
+        
         if(! isolate(data_load_status$full_load)){
-          invalidateLater(1000 * 1, session)
+          invalidateLater(1000 * 5, session)
         }else{
           invalidateLater(1000 * isolate(input$data_refresh_rate), session)
         }
@@ -313,7 +314,7 @@ alertStream <- function(session) {
   reactive({
     new_lines <- newLines()
     
-    if(is.null(new_lines) || nrow(new_lines) == 0)
+    if(is.null(new_lines) || nrow(new_lines) == 0 )
       return(data_row_template)
     
     location_fields <- c('country_name','country_code','city','lat','long')
@@ -513,30 +514,59 @@ eventCount <- function(alrtStream, timeWindow, event_type = '') {
 }
 
 mapData <- function(alrtData, event_type = '') {
-  df <- alrtData  
-  if (is.null(df))
-      return()
-  # invalidateLater(1000 * 60, session)
-  # df <- formatted_lines[names(data_row_template)]
-  
+
   if(event_type == ''){
     event_type <- event_types
   }
   e_type <- event_type
+    
+  color_field <- 'app_proto'
+  # df <- formatted_lines[names(data_row_template)]
+  df <- alrtData  %>%
+    filter(event_type %in% e_type)
+  
+  if (is.null(df) || nrow(df) == 0)
+      return()
+  # invalidateLater(1000 * 60, session)
+  # df <- formatted_lines[names(data_row_template)]
+  
+  print(paste('map rows:', nrow(df)))
+  
+  if(event_type == 'http' && ! is.null(df$event_type)){
+    color_factor <- as.factor(df$event_type)
+    color_set <- data.frame(event_type = levels(color_factor),
+                            color = I(brewer.pal(nlevels(color_factor), name = 'Dark2')))    
+  }else{
+    if(event_type == 'alert' && ! is.null(df$alert.category)){
+      color_factor <- as.factor(df$alert.category)
+      print(levels(color_factor))
+      color_set <- data.frame(alert.category = levels(color_factor),
+                              color = I(brewer.pal(nlevels(color_factor), name = 'Dark2')))
+    }else{
+      color_factor <- as.factor(df$app_proto)
+      color_set <- data.frame(app_proto = levels(color_factor),
+                              color = I(brewer.pal(nlevels(color_factor), name = 'Dark2')))
+    }
+  }
+  
+  total_requests <- nrow(df)
+  
   
   total_bytes <- max(sum( df$http.length, na.rm=T ),
                      (sum(df$flow.bytes_toclient, na.rm=T) + sum(df$flow.bytes_toserver, na.rm=T)),
                      sum(df$netflow.bytes, na.rm=T))
   
-  df_grouped <- df %>% 
-    filter(event_type %in% e_type) %>% 
-    group_by(dest_country_name, dest_country_code, dest_city, dest_ip,dest_long,dest_lat,
-           src_country_name, src_country_code, src_city, src_ip,src_long,src_lat) %>%
+  df_grouped <- merge.data.frame(df, color_set) %>% 
+    filter(event_type %in% e_type) %>%
+    mutate(country_name = dest_country_name, country_code = dest_country_code, city = dest_city, 
+           ip = dest_ip, long = dest_long,lat = dest_lat) %>%
+    group_by(country_name, country_code, city, ip, long, lat, color) %>%
     summarise( popup_html = (paste(
       '<div class="alert_details_name"><h4>', unique(dest_city), " (", unique(dest_country_code) , ')<h4></div>',
       '<div class="alert_details">IP Address', unique(dest_ip), '</div>',
+      '<div class="alert_details">Event Type(s):',paste(Filter(Negate(is.na),unique( event_type)),collapse =',\n'), '</div>',
       '<div class="alert_details">Traffic Type(s):',paste(Filter(Negate(is.na),unique( app_proto)),collapse =',\n'), '</div>',
-       # '<div class="alert_details">Requests:', n(), '</div>',
+      '<div class="alert_details">Requests:', n(), '</div>',
       (if('flow' %in% event_type) paste(
         '<div class="alert_details">Alert Triggered:', ('TRUE' %in% flow.alerted) , '</div>',
         '<div class="alert_details">Bytes to Client:', sum(flow.bytes_toclient), '</div>',
@@ -554,8 +584,13 @@ mapData <- function(alrtData, event_type = '') {
         '<div class="alert_details">HTTP Server(s):', paste(Filter(Negate(is.na),unique( http.server)),collapse =', '), '</div>',
         '<div class="alert_details">HTTP Method(s):', paste(Filter(Negate(is.na),unique( http.http_method)),collapse =', '), '</div>',
         '<div class="alert_details">HTTP Bytes:', sum(http.length, na.rm=T ), '</div>'
-      )
-      ),
+      )),
+      (if('alert' %in% event_type) paste(
+        '<div class="alert_details">Alert Category(s):',paste(Filter(Negate(is.na),unique( alert.category)),collapse =',\n'), '</div>',
+        '<div class="alert_details">Alert Action(s):', paste(Filter(Negate(is.na),unique( alert.action)),collapse =', '), '</div>',
+        '<div class="alert_details">Alert Signature(s):', paste(Filter(Negate(is.na),unique( alert.signature)),collapse =', '), '</div>',
+        '<div class="alert_details">Alert Severity(s):', paste(Filter(Negate(is.na),unique( alert.severity)),collapse =', '), '</div>'
+      )),
       '</div>',
     sep = ' ')
     ),
@@ -566,8 +601,10 @@ mapData <- function(alrtData, event_type = '') {
     packets = max(sum(flow.pkts_toclient, na.rm=T ) + sum(flow.pkts_toserver, na.rm=T ),
                   sum(netflow.pkts, na.rm=T )),
   ) %>%
-    mutate(total_bytes_pct = round(bytes/total_bytes,2))
-  
+    mutate(total_bytes_pct = round(bytes/total_bytes,2)
+           ,radius = round(4 + ( round(requests/total_requests, 2)) * 16)
+           # ,radius = round(4 + ( round(bytes/total_bytes, 2)) * 16)
+    )
   return(
     df_grouped
   )

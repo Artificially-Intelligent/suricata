@@ -1,0 +1,177 @@
+####--UI SOLUTION--------------------------------------------------------------------------------------------
+
+
+tabItem_dashboard <- function(event = "all") {
+  tab_name <- paste(event,"_dash",sep="")
+  if( event == "all"){
+    event_type <- "Event"  
+  }else{
+    if( event == "http"){
+      event_type <- "HTTP"  
+    }else{
+      event_type <- simple_cap(event)
+    }
+  } 
+  tab_title <- paste(event_type ,  'Overview')
+  value_box_1_outputId <- paste(event,".destinations",sep="")
+  value_box_2_outputId <- paste(event,".rate",sep="")
+  value_box_3_outputId <- paste(event,".requests",sep="")
+  value_box_4_outputId <- paste(event,".report_period",sep="")
+  bubble_plot_title    <- paste(event_type ,  'Breakdown')
+  if(event == "all"){
+    bubble_plot_outputId <- paste(event,".event_count.bubbleplot",sep="")
+    table_outputId      <- paste(event,".event_count.table",sep="")
+    table_title   <- paste('Top',event_type ,'Types')  
+  }else{
+    bubble_plot_outputId <- paste(event,".destination.bubbleplot",sep="")
+    table_outputId      <- paste(event,".destination.table",sep="")
+    table_title   <- paste('Top',event_type ,'Destinations')
+  }
+  
+  
+  tabItem(tabName = tab_name,
+   tabPanel(
+     fluidRow(width = "100%"),
+     fluidRow(width = "100%",
+              column(
+                width = 6,h2(icon("dashboard"), HTML("&nbsp;"),tab_title)
+              )
+     ),
+     fluidRow(width = "100%",
+              valueBoxOutput(width = 3,value_box_1_outputId)
+              ,valueBoxOutput(width = 3,value_box_2_outputId)
+              ,valueBoxOutput(width = 3,value_box_3_outputId)
+              ,valueBoxOutput(width = 3,value_box_4_outputId)
+     ),
+     fluidRow(
+       width = "100%",
+        column(width = 8, 
+         box(
+           width = 12, status = "info", solidHeader = TRUE,
+           title = bubble_plot_title,
+           bubblesOutput(bubble_plot_outputId, width = "100%", height = 220)
+              #%>% withSpinner(color="#0dc5c1")
+           ),
+       ),
+        column(
+           width = 4,
+            box(
+             width = 12,
+             status = "info",
+             solidHeader = TRUE,
+             title = paste(table_title, sep = "" ),
+             div(style = 'height:220px;overflow-y: scroll', 
+                 tableOutput(table_outputId)
+                  #%>% withSpinner(color="#0dc5c1")
+                 )
+            )
+         )
+       )
+     )
+   
+  )
+}
+
+####--UI SOLUTION--------------------------------------------------------------------------------------------
+
+
+tabItem_table <- function(event = "all") {
+  tab_name <- paste(event,"_table",sep="")
+  if( event == "all"){
+    event_type <- "event"  
+  }else{
+    event_type <- event
+  } 
+  tab_title <- simple_cap(paste(event_type ,  'Details'))
+  DT_outputId <- paste(event,".table",sep="")
+  download_csv_outputId <- paste(event,".download_csv",sep="")
+  
+  tabItem(tabName = tab_name,
+       # fluidRow(width = "100%",
+       #          column(
+       #            width = 6,h2(icon("table"), HTML("&nbsp;"),tab_title)
+       #          )
+       # ),
+      fluidRow(
+        box(
+          width = 12, status = "info", solidHeader = TRUE,
+          title = tab_title,
+          DTOutput(DT_outputId) 
+        )
+      ),
+      fluidRow(
+        column(
+          width = 3,
+          #offset = 9,
+          downloadButton(download_csv_outputId, "Download as CSV")
+        )
+      )
+    
+  )
+}
+
+tabItem_map <- function(event = "all") {
+  tab_name <- paste(event,"_map",sep="")
+  leaflet_name <- paste(tab_name, "_leaflet",sep="")
+  print(leaflet_name)
+  if( event == "all"){
+    event_type <- "Event"  
+  }else{
+    if( event == "http"){
+      event_type <- "HTTP"  
+    }else{
+      event_type <- simple_cap(event)
+    }
+  } 
+  tab_title <- paste(event_type ,  'Map')
+  
+  
+  tabItem(tabName = tab_name,
+          fluidRow(
+            column(width = 6,
+                   h2(icon("globe-asia"), HTML("&nbsp;"),tab_title)
+            )
+          )
+          # ,box(
+          #   br()
+            ,fluidRow(
+              # box(
+                title = NULL, width = 12, background = NULL,
+                leafletOutput(outputId = leaflet_name) 
+                %>% withSpinner(color="#0dc5c1")
+                
+                # ,br()
+                # ,fluidRow(
+                #   column(width = 6,
+                #          actionBttn(
+                #            inputId = "zoom_australia_button",
+                #            label = "Australia", 
+                #            style = "gradient",
+                #            color = "primary",
+                #            icon = icon("search-location")
+                #          )
+                #   ),
+                #   column(width = 4,
+                #          fluidRow(
+                #            textInput(
+                #              inputId = "pulse_icon_text",
+                #              label = "Enter address"
+                #            ),
+                #            textOutput("pulse_icon_message")
+                #          )
+                #   ),
+                #   column(width = 2,
+                #          actionBttn(
+                #            inputId = "pulse_icon_button",
+                #            label = "Go",
+                #            style = "gradient",
+                #            color = "primary"
+                #          ))
+                # )
+              # )
+            # )
+          )
+  )
+}
+
+

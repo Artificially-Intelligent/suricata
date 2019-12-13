@@ -3,13 +3,13 @@
 # http_data is a reactive expression that accumulates previous
 # values of pkgStream, discarding any that are older than
 # max_age_secs.
-http_data <- alertData(alert_stream, max_age_secs, event_type = "http")
+http_data <- alertData(event_stream, max_age_secs, event_type = "http")
 
-http_success_request_count <- httpSuccessCount(alert_stream)
+http_success_request_count <- httpSuccessCount(event_stream)
 
-http_request_count <- requestCount(alert_stream,event_type='http')
-http_destination_count <- destinationCount(alert_stream,event_type='http')
-http_bytes_total <-  totalBytes(alert_stream,event_type='http')
+http_request_count <- requestCount(event_stream,event_type='http')
+http_destination_count <- destinationCount(event_stream,event_type='http')
+http_bytes_total <-  totalBytes(event_stream,event_type='http')
 
 output$http.rate <- renderValueBox({
   # The downloadRate is the number of rows in http_data since
@@ -63,7 +63,31 @@ output$http.bytes <- renderValueBox({
   )
 })
 
-output$http.hostname.bubbleplot <- renderBubbles({
+
+output$http.report_period_text <- renderText({
+  time_period <- all_data()  %>%
+    summarise('min_timestamp' = as_datetime(min(timestamp_num)), 'max_timestamp' = as_datetime(max(timestamp_num)))
+  
+  format(round(time_period$max_timestamp - time_period$min_timestamp,2))
+})
+
+
+output$http.report_period <- renderValueBox({
+  
+  time_period <- all_data()  %>%
+    summarise('min_timestamp' = as_datetime(min(timestamp_num)), 'max_timestamp' = as_datetime(max(timestamp_num)))
+  
+  period_text <- format(round(time_period$max_timestamp - time_period$min_timestamp,2))
+  
+  valueBox(
+    period_text,
+    "Current Report Period Length",
+    icon = icon("clock")
+  )
+})
+
+
+output$http.destination.bubbleplot <- output$http.hostname.bubbleplot <- renderBubbles({
   if (nrow(http_data()) == 0)
     return()
   
@@ -73,13 +97,13 @@ output$http.hostname.bubbleplot <- renderBubbles({
     tally() %>%
     arrange(desc(n), tolower(http.hostname)) %>%
     # Just show the top 60, otherwise it gets hard to see
-    head(60)
+    head(40)
   
   bubbles(df$n, df$http.hostname, key = df$http.hostname)
 })
 
 
-output$http.hostname.table <- renderTable({
+output$http.destination.table <- output$http.hostname.table <- renderTable({
   http_data() %>%
     group_by(http.hostname) %>%
     tally() %>%

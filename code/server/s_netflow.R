@@ -1,10 +1,10 @@
 ### netflow 
 
-netflow_data <- alertData(alert_stream, max_age_secs, event_type = "netflow")
+netflow_data <- alertData(event_stream, max_age_secs, event_type = "netflow")
 
-netflow_request_count <- requestCount(alert_stream,event_type='netflow')
-netflow_destination_count <- destinationCount(alert_stream,event_type='netflow')
-netflow_bytes_total <-  totalBytes(alert_stream,event_type='netflow')
+netflow_request_count <- requestCount(event_stream,event_type='netflow')
+netflow_destination_count <- destinationCount(event_stream,event_type='netflow')
+netflow_bytes_total <-  totalBytes(event_stream,event_type='netflow')
 
 output$netflow.rate <- renderValueBox({
   # The downloadRate is the number of rows in netflow_data since
@@ -51,6 +51,29 @@ output$netflow.bytes <- renderValueBox({
 })
 
 
+output$netflow.report_period_text <- renderText({
+  time_period <- all_data()  %>%
+    summarise('min_timestamp' = as_datetime(min(timestamp_num)), 'max_timestamp' = as_datetime(max(timestamp_num)))
+  
+  format(round(time_period$max_timestamp - time_period$min_timestamp,2))
+})
+
+
+output$netflow.report_period <- renderValueBox({
+  
+  time_period <- all_data()  %>%
+    summarise('min_timestamp' = as_datetime(min(timestamp_num)), 'max_timestamp' = as_datetime(max(timestamp_num)))
+  
+  period_text <- format(round(time_period$max_timestamp - time_period$min_timestamp,2))
+  
+  valueBox(
+    period_text,
+    "Current Report Period Length",
+    icon = icon("clock")
+  )
+})
+
+
 output$netflow.app_proto_bytes.barplot <- renderPlotly({
   df <- netflow_data()
   if (nrow(df) == 0)
@@ -71,7 +94,9 @@ output$netflow.app_proto_bytes.barplot <- renderPlotly({
   p
 })
 
-output$netflow.dest_ip.bubbleplot <- renderBubbles({
+
+
+output$netflow.destination.bubbleplot <- output$netflow.dest_ip.bubbleplot <- renderBubbles({
   if (nrow(netflow_data()) == 0)
     return()
   
@@ -81,14 +106,14 @@ output$netflow.dest_ip.bubbleplot <- renderBubbles({
     tally() %>%
     arrange(desc(n), tolower(dest_ip)) %>%
     # Just show the top 60, otherwise it gets hard to see
-    head(60)
+    head(40)
   
   bubbles(df$n, df$dest_ip, key = df$dest_ip)
 })
 
 
 
-output$netflow.dest_ip.table <- renderTable({
+output$netflow.destination.table <- output$netflow.dest_ip.table <- renderTable({
   netflow_data() %>%
     group_by(dest_ip) %>%
     tally() %>%

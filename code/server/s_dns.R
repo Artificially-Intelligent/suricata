@@ -1,10 +1,10 @@
 ### DNS 
 
-dns_data <- alertData(alert_stream, max_age_secs, event_type = "dns")
+dns_data <- alertData(event_stream, max_age_secs, event_type = "dns")
 
-dns_request_count <- requestCount(alert_stream,event_type='dns')
-dns_destination_count <- destinationCount(alert_stream,event_type='dns')
-dns_bytes_total <-  totalBytes(alert_stream,event_type='dns')
+dns_request_count <- requestCount(event_stream,event_type='dns')
+dns_destination_count <- destinationCount(event_stream,event_type='dns')
+dns_bytes_total <-  totalBytes(event_stream,event_type='dns')
 
 output$dns.rate <- renderValueBox({
   # The downloadRate is the number of rows in dns_data since

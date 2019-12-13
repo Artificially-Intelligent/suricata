@@ -1,56 +1,56 @@
-### FLOW 
+### Alert 
 
-flow_data <- alertData(event_stream, max_age_secs, event_type = "flow")
+alert_data <- alertData(event_stream, max_age_secs, event_type = "alert")
 
-flow_request_count <- requestCount(event_stream,event_type='flow')
-flow_destination_count <- destinationCount(event_stream,event_type='flow')
-flow_bytes_total <-  totalBytes(event_stream,event_type='flow')
+alert_request_count <- requestCount(event_stream,event_type='alert')
+alert_destination_count <- destinationCount(event_stream,event_type='alert')
+alert_bytes_total <-  totalBytes(event_stream,event_type='alert')
 
-output$flow.rate <- renderValueBox({
-  # The downloadRate is the number of rows in flow_data since
+output$alert.rate <- renderValueBox({
+  # The downloadRate is the number of rows in alert_data since
   # either first_timestamp or max_age_secs ago, whichever is later.
   elapsed <- as.numeric(Sys.time()) - first_timestamp()
-  download_rate <- nrow(flow_data()) / min(max_age_secs, elapsed)
+  download_rate <- nrow(alert_data()) / min(max_age_secs, elapsed)
   
   print(paste("first timestamp:",first_timestamp(),"elapsed:",min(max_age_secs, elapsed)))
   
   valueBox(
     value = formatC(download_rate, digits = 1, format = "f"),
-    subtitle = paste("Flow request per sec (last",max_age_minutes, "min)"),
+    subtitle = paste("Alerts per sec (last",max_age_minutes, "min)"),
     icon = icon("area-chart")
     # ,
     # color = if (download_rate >= input$rateThreshold) "yellow" else "aqua"
   )
 })
 
-output$flow.destinations <- renderValueBox({
+output$alert.destinations <- renderValueBox({
   valueBox(
-    flow_destination_count(),
-    "Unique flow Desintations",
+    alert_destination_count(),
+    "Unique alert Desintations",
     icon = icon("desktop")
   )
 })
 
 
-output$flow.requests <- renderValueBox({
+output$alert.requests <- renderValueBox({
   valueBox(
-    flow_request_count(),
-    "Total flow Volume (requests)",
+    alert_request_count(),
+    "Total alert Volume (requests)",
     icon = icon("window-restore")
   )
 })
 
 
-output$flow.bytes <- renderValueBox({
+output$alert.bytes <- renderValueBox({
   valueBox(
-    round(flow_bytes_total()/(1024*1024),1),
+    round(alert_bytes_total()/(1024*1024),1),
     "Total Web Volume (MB)",
     icon = icon("window-restore")
   )
 })
 
 
-output$flow.report_period_text <- renderText({
+output$alert.report_period_text <- renderText({
   time_period <- all_data()  %>%
     summarise('min_timestamp' = as_datetime(min(timestamp_num)), 'max_timestamp' = as_datetime(max(timestamp_num)))
   
@@ -58,7 +58,7 @@ output$flow.report_period_text <- renderText({
 })
 
 
-output$flow.report_period <- renderValueBox({
+output$alert.report_period <- renderValueBox({
   
   time_period <- all_data()  %>%
     summarise('min_timestamp' = as_datetime(min(timestamp_num)), 'max_timestamp' = as_datetime(max(timestamp_num)))
@@ -74,38 +74,35 @@ output$flow.report_period <- renderValueBox({
 
 
 
-output$flow.destination.bubbleplot <- output$flow.dest_ip.bubbleplot <- renderBubbles({
-  if (nrow(flow_data()) == 0)
+output$alert.destination.bubbleplot <- output$alert.src_ip.bubbleplot <- renderBubbles({
+  if (nrow(alert_data()) == 0)
     return()
   
-  order <- unique(flow_data()$dest_ip)
-  df <- flow_data() %>%
-    group_by(dest_ip) %>%
+  order <- unique(alert_data()$src_ip)
+  df <- alert_data() %>%
+    group_by(src_ip) %>%
     tally() %>%
-    arrange(desc(n), tolower(dest_ip)) %>%
+    arrange(desc(n), tolower(src_ip)) %>%
     # Just show the top 60, otherwise it gets hard to see
     head(40)
   
-  bubbles(df$n, df$dest_ip, key = df$dest_ip)
+  bubbles(df$n, df$src_ip, key = df$src_ip)
 })
 
-
-
-output$flow.destination.table <- output$flow.dest_ip.table <- renderTable({
-  flow_data() %>%
-    group_by(dest_ip) %>%
+output$alert.destination.table <- output$alert.src_ip.table <- renderTable({
+  alert_data() %>%
+    group_by(src_ip) %>%
     tally() %>%
-    arrange(desc(n), tolower(dest_ip)) %>%
-    mutate(percentage = n / nrow(flow_data()) * 100) %>%
-    select("Destination IP" = dest_ip, "% of requests" = percentage) %>%
+    arrange(desc(n), tolower(src_ip)) %>%
+    mutate(percentage = n / nrow(alert_data()) * 100) %>%
+    select("Source IP" = src_ip, "% of requests" = percentage) %>%
     as.data.frame() %>%
     head(15)
 }, digits = 1, options = list(scrollX = TRUE))
 
-
-output$flow.raw <- renderPrint({
+output$alert.raw <- renderPrint({
   #orig <- options(width = 1000)
-  flow_data(input$maxrows) %>%
+  alert_data(input$maxrows) %>%
     remove_empty(which = c("rows", "cols")) %>%
     select( timestamp,
             flow_id,
@@ -115,7 +112,7 @@ output$flow.raw <- renderPrint({
             dest_ip,
             dest_port, 
             proto,
-            starts_with("flow")) %>%
+            starts_with("alert")) %>%
     #tail(input$maxrows) %>%
     print(row.names = FALSE)  
   
@@ -124,18 +121,17 @@ output$flow.raw <- renderPrint({
 
 
 
-output$flow.table <- renderDT({
+output$alert.table <- renderDT({
   updateSliderTextInput(session,"data_refresh_rate",selected = 120) 
   
-  flow_data() %>% 
-    mutate(timestamp = as_datetime(timestamp, tz = Sys.timezone(location = TRUE)),  
-           flow.start = as_datetime(flow.start, tz = Sys.timezone(location = TRUE)),  
-           flow.end = as_datetime(flow.end, tz = Sys.timezone(location = TRUE))  
+  alert_data() %>% 
+    mutate(timestamp = as_datetime(timestamp, tz = Sys.timezone(location = TRUE))
+           # ,alert.start = as_datetime(alert.start, tz = Sys.timezone(location = TRUE)),  
+           # ,alert.end = as_datetime(alert.end, tz = Sys.timezone(location = TRUE))  
     ) %>%
-    select(-flow_id,-event_type,-host) %>%
+    select(-flow_id, -event_type, -host) %>%
     remove_empty(which = c("rows", "cols")) %>%
     as.data.frame()
-  
   }, 
 class = "display nowrap compact", # style
 filter = "top", # location of column filters
@@ -144,11 +140,11 @@ options = list(scrollX = TRUE)
 
 
 
-output$flow.download_csv <- downloadHandler(
-  filename = "flow.csv",
+output$alert.download_csv <- downloadHandler(
+  filename = "alert.csv",
   
   content = function(file) {
-      flow_data() %>%
+      alert_data() %>%
       remove_empty(which = c("rows", "cols")) %>%
       # tail(input$maxrows) %>%
       write.csv(file)
@@ -156,8 +152,8 @@ output$flow.download_csv <- downloadHandler(
   contentType = "text/csv"
 )
 
-output$flow.app_proto_server_bytes.barplot <- renderPlotly({
-  df <- flow_data()
+output$alert.app_proto_server_bytes.barplot <- renderPlotly({
+  df <- alert_data()
   if (nrow(df) == 0)
     return()
   
@@ -167,7 +163,7 @@ output$flow.app_proto_server_bytes.barplot <- renderPlotly({
   
   p <- df %>%
     group_by(time,app_proto) %>%
-    summarise("Mbps" = round(sum(flow.bytes_toserver)/131072,),3) %>%
+    summarise("Mbps" = round(sum(alert.bytes_toserver)/131072,),3) %>%
     ggplot( aes(x=time, y=Mbps, colour=app_proto)) +
     geom_col() +
     #  geom_area(alpha=0.5) +
@@ -176,8 +172,8 @@ output$flow.app_proto_server_bytes.barplot <- renderPlotly({
   p
 })
 
-output$flow.app_proto_client_bytes.barplot <- renderPlotly({
-  df <- flow_data()
+output$alert.app_proto_client_bytes.barplot <- renderPlotly({
+  df <- alert_data()
   if (nrow(df) == 0)
     return()
   
@@ -187,7 +183,7 @@ output$flow.app_proto_client_bytes.barplot <- renderPlotly({
   
   p <- df %>%
     group_by(time,app_proto) %>%
-    summarise("Mbps" = round(sum(flow.bytes_toclient)/131072,),3) %>%
+    summarise("Mbps" = round(sum(alert.bytes_toclient)/131072,),3) %>%
     ggplot( aes(x=time, y=Mbps, colour=app_proto)) +
     geom_col() +
     #  geom_area(alpha=0.5) +
@@ -197,8 +193,8 @@ output$flow.app_proto_client_bytes.barplot <- renderPlotly({
 })
 
 
-output$flow.app_proto_server_bytes2.barplot <- renderPlotly({
-  df <- flow_data()
+output$alert.app_proto_server_bytes2.barplot <- renderPlotly({
+  df <- alert_data()
   if (nrow(df) == 0)
     return()
 
@@ -213,12 +209,12 @@ output$flow.app_proto_server_bytes2.barplot <- renderPlotly({
   
   for( i in (1:length(df))){
     #df_row <- df[3,]
-    df_spread <- (as.numeric(as_datetime(df$flow.start[i]))):(as.numeric(as_datetime(df$flow.end[i]))) %>% 
+    df_spread <- (as.numeric(as_datetime(df$alert.start[i]))):(as.numeric(as_datetime(df$alert.end[i]))) %>% 
       as.data.frame(col.names = c('time')) 
     names(df_spread) <- 'time'
     df_spread$app_proto <- df$app_proto[i]
-    df_spread$bytes_toserver <- (df$flow.bytes_toserver[i] / length(df_spread))
-    df_spread$bytes_toclient <- (df$flow.bytes_toclient[i] / length(df_spread))
+    df_spread$bytes_toserver <- (df$alert.bytes_toserver[i] / length(df_spread))
+    df_spread$bytes_toclient <- (df$alert.bytes_toclient[i] / length(df_spread))
     df_results <- rbind(df_results,df_spread)
   }
   df_results$time <- as_datetime(df_results$time, origin = lubridate::origin, tz = Sys.timezone(location = TRUE))

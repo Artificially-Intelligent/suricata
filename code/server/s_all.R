@@ -1,11 +1,11 @@
 ### all 
 
-all_data <- alertData(alert_stream, max_age_secs)
+all_data <- alertData(event_stream, max_age_secs)
 data$events_all <- all_data
 
-all_request_count <- requestCount(alert_stream)
-all_destination_count <- destinationCount(alert_stream)
-all_bytes_total <-  totalBytes(alert_stream)
+all_request_count <- requestCount(event_stream)
+all_destination_count <- destinationCount(event_stream)
+all_bytes_total <-  totalBytes(event_stream)
 
 output$all.rate <- renderValueBox({
   # The downloadRate is the number of rows in all_data since
@@ -85,8 +85,7 @@ output$all.bytes <- renderValueBox({
   )
 })
 
-
-output$all.dest_ip.bubbleplot <- renderBubbles({
+output$all.destination.bubbleplot <- output$all.dest_ip.bubbleplot <- renderBubbles({
   if (nrow(data$events_all() ) == 0)
     return()
   
@@ -101,7 +100,7 @@ output$all.dest_ip.bubbleplot <- renderBubbles({
   bubbles(df$n, df$dest_ip, key = df$dest_ip)
 })
 
-output$all.dest_ip.table <- renderTable({
+output$all.destination.table <- output$all.dest_ip.table <- renderTable({
   data$events_all()  %>%
     group_by(dest_ip) %>%
     tally() %>%

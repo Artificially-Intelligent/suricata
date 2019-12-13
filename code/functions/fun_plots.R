@@ -10,16 +10,16 @@ weather_plot_f <- function(df){
 addCircles_f <- function(map, df){
 df_grouped <- df
   map %>% addCircleMarkers(data = df_grouped, 
-                           lng = df_grouped$dest_long,
-                           lat = df_grouped$dest_lat,
-                           layerId = df_grouped$dest_ip,
+                           lng = df_grouped$long,
+                           lat = df_grouped$lat,
+                           layerId = df_grouped$ip,
                            group = "dest_markers",
                            stroke = FALSE,
                            fillOpacity = 0.8,
-                           radius = round(4 + (df_grouped$total_bytes_pct*16),0),
-                           fillColor = df_grouped$dest_colour,
+                           radius =  df_grouped$radius,
+                           fillColor = df_grouped$color,
                            #icon = ~map_icons[df$pt_domr],
-                           #clusterOptions = markerClusterOptions(iconCreateFunction=JS(clusterJS)) #,
+                           # clusterOptions = markerClusterOptions(iconCreateFunction=JS(clusterJS)) ,
                            popup = df_grouped$popup_html,
                            popupOptions = popupOptions(closeButton = FALSE), 
                            options = pathOptions(pane = "top_circles")
@@ -29,24 +29,21 @@ df_grouped <- df
 
 popup_f <- function(df){
   # js <- "javascript:$('#map_view_btn').show();$('#sales_history_box').show();$('#table').show();$('#list_view_btn').hide();$('#map').hide();"
-  paste(popup_html_f(df),
-        # ,"<a href=", js,  " class ='more_btn'>more..</a>"
-        
+  paste(popup_html_f(df)
+         # ,"<a href=", js,  " class ='more_btn'>more..</a>"
   )
 }
 
-popup_html_f <- function(df){
-  summary <- df 
-  paste('<div class="alert_details">
-          <div class="alert_details_name"><h4>', summary$dest_city, " (", summary$dest_country_code , ')<h4></div>
-          <div class="alert_details">', summary$attribute.list.1, '</div>
-          <div class="alert_details">', summary$attribute.list.2, '</div>
-          <div class="alert_details">', summary$attribute.list.3, '</div>
-          <div class="alert_details">', summary$attribute.list.4, '</div>
-          <div class="alert_details">IP Address', summary$dest_ip, '</div>
-          <div class="alert_details">Requests:', summary$requests, '</div>
-          <div class="alert_details">Bytes', summary$bytes, '</div>
-          '
-  )
-  
-}
+clusterJS <- "function (cluster) {    
+                        var childCount = cluster.getChildCount(); 
+                        var c = ' marker-custom-';  
+                        if (childCount < 20) {  
+                          c += 'small';  
+                        } else if (childCount < 50) {  
+                          c += 'medium';  
+                        } else { 
+                          c += 'large';  
+                        }    
+                        return new L.DivIcon({ html: '<div><span>' + childCount + '</span></div>', className: 'marker-cluster' + c, iconSize: new L.Point(40, 40) });
+                    
+                      }"

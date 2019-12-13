@@ -118,6 +118,10 @@ auth0_server(function(input, output, session, options) {
                  menuSubItem("Alert Map", 
                              tabName = "alert_map", 
                              icon = icon("globe")
+                 ),
+                 menuSubItem("Alert Detail", 
+                             tabName = "alert_table", 
+                             icon = icon("table")
                  )
         ),
         menuItem("Traffic Drops",icon = icon("bomb"),
@@ -128,6 +132,10 @@ auth0_server(function(input, output, session, options) {
                  menuSubItem("Drop Map", 
                              tabName = "drop_map", 
                              icon = icon("globe")
+                 ),
+                 menuSubItem("Drop Detail", 
+                             tabName = "drop_table", 
+                             icon = icon("table")
                  )
         )
       )
@@ -150,19 +158,47 @@ auth0_server(function(input, output, session, options) {
     # tabsetPanel(id = "tabset",
     #             type = "tabs", 
     tabItems(
-      tabItem_all_dashboard,
-      tabItem_all_table,
+      tabItem_dashboard('all')
+      ,tabItem_map('all')
+      ,tabItem_table('all')
+      # tabItem_all_dashboard
+      # ,tabItem_all_table
       
-      tabItem_http_dashboard,
-      tabItem_http_map,
-      tabItem_http_table,
-      tabItem_flow_dashboard,
-      tabItem_flow_app_traffic,
-      tabItem_flow_map,
-      tabItem_flow_table,
-      tabItem_netflow_dashboard,
-      tabItem_netflow_map,
-      tabItem_netflow_table
+      ,tabItem_dashboard('http')
+      ,tabItem_map('http')
+      ,tabItem_table('http')
+      
+      # ,tabItem_http_dashboard
+      # ,tabItem_http_map
+      # ,tabItem_http_table
+      
+      ,tabItem_dashboard('flow')
+      ,tabItem_map('flow')
+      ,tabItem_table('flow')
+      ,tabItem_flow_app_traffic
+      
+      
+      # ,tabItem_flow_dashboard
+      # ,tabItem_flow_map
+      # ,tabItem_flow_table
+      
+      ,tabItem_dashboard('netflow')
+      ,tabItem_map('netflow')
+      ,tabItem_table('netflow')
+      
+      
+      
+      # ,tabItem_netflow_dashboard
+      # ,tabItem_netflow_map
+      # ,tabItem_netflow_table
+      
+      ,tabItem_dashboard('alert')
+      ,tabItem_map('alert')
+      ,tabItem_table('alert')
+      
+      # ,tabItem_alert_dashboard
+       # ,tabItem_alert_map
+      # ,tabItem_alert_table
     )
   })
   
@@ -209,11 +245,10 @@ auth0_server(function(input, output, session, options) {
   source('server/s_flow.R', local = TRUE)
   source('server/s_netflow.R', local = TRUE)
   source('server/s_dns.R', local = TRUE)
+  source('server/s_alert.R', local = TRUE)
 
-
-  # source('server/s_maps.R', local = TRUE)
   source('server/s_maps.R', local = TRUE)
-  
+
   source('server/s_user.R', local = TRUE)
   
   # Max age of data (default = 5 minutes)
@@ -221,10 +256,10 @@ auth0_server(function(input, output, session, options) {
   max_age_secs <- 60 * max_age_minutes
   
   #### 
-  # alert_stream is a reactive expression that represents a stream of
+  # event_stream is a reactive expression that represents a stream of
   # new rows from a suricate event log stored in redis; each call only 
   # returns new rows occouring after the last of those delivered prior.
-  alert_stream <- alertStream(session)
+  event_stream <- alertStream(session)
   
   ###
   # Set minimum refresh rate for tabs which are slower to render
@@ -284,10 +319,10 @@ print(output_type)
   
   #so Record the time that the session started.
   start_timestamp <- as.numeric(Sys.time())
-  first_timestamp <- firstTimestamp(alert_stream)
-  last_timestamp <- lastTimestamp(alert_stream)
+  first_timestamp <- firstTimestamp(event_stream)
+  last_timestamp <- lastTimestamp(event_stream)
   
-  event_count <- eventCount(alert_stream)
+  event_count <- eventCount(event_stream)
   
   output$all.event_count.bubbleplot <- renderBubbles({
     if (nrow(event_count()) == 0)

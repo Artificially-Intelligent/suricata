@@ -1,12 +1,12 @@
 ####--UI SOLUTION--------------------------------------------------------------------------------------------
 
 
-tabItem_http_dashboard <-tabItem(tabName = "http_dash",
+tabItem_alert_dashboard <-tabItem(tabName = "alert_dash",
                                  tabPanel(
                                    fluidRow(width = "100%"),
                                    fluidRow(width = "100%",
                                             column(
-                                              width = 6,h2(icon("dashboard"), HTML("&nbsp;"),"HTTP Traffic Overview")
+                                              width = 6,h2(icon("dashboard"), HTML("&nbsp;"),"Traffic Alerts Overview")
                                             )
                                             # ,
                                             # column(
@@ -20,36 +20,36 @@ tabItem_http_dashboard <-tabItem(tabName = "http_dash",
                                             #   )
                                             #)
                                    ),
-                                   fluidRow(width = "100%",
-                                            valueBoxOutput(width = 3,"http.destinations"),
-                                            valueBoxOutput(width = 3,"http.rate"),
-                                            valueBoxOutput(width = 3,"http.requests"),
-                                            valueBoxOutput(width = 3,"http.status.pct")
-                                   ),
-                                   fluidRow(
-                                     width = "100%",
-                                      column(width = 8, 
-                                       box(
-                                         width = 12, status = "info", solidHeader = TRUE,
-                                         title = "Requests to http hosts (last 30 min)",
-                                         bubblesOutput("http.hostname.bubbleplot", width = "100%", height = 220)
-                                            #%>% withSpinner(color="#0dc5c1")
-                                         ),
-                                     ),
-                                      column(
-                                         width = 4,
-                                          box(
-                                           width = 12,
-                                           status = "info",
-                                           solidHeader = TRUE,
-                                           title = "Top Host (last 5 min)",
-                                           div(style = 'height:220px;overflow-y: scroll', 
-                                               tableOutput('http.hostname.table')
-                                                #%>% withSpinner(color="#0dc5c1")
-                                               )
-                                          )
-                                       )
-                                     )
+                                   # fluidRow(width = "100%",
+                                   #          valueBoxOutput(width = 3,"http.destinations"),
+                                   #          valueBoxOutput(width = 3,"http.rate"),
+                                   #          valueBoxOutput(width = 3,"http.requests"),
+                                   #          valueBoxOutput(width = 3,"http.status.pct")
+                                   # ),
+                                   # fluidRow(
+                                   #   width = "100%",
+                                   #    column(width = 8, 
+                                   #     box(
+                                   #       width = 12, status = "info", solidHeader = TRUE,
+                                   #       title = "Requests to http hosts (last 30 min)",
+                                   #       bubblesOutput("http.hostname.bubbleplot", width = "100%", height = 220)
+                                   #          #%>% withSpinner(color="#0dc5c1")
+                                   #       ),
+                                   #   ),
+                                   #    column(
+                                   #       width = 4,
+                                   #        box(
+                                   #         width = 12,
+                                   #         status = "info",
+                                   #         solidHeader = TRUE,
+                                   #         title = "Top Host (last 5 min)",
+                                   #         div(style = 'height:220px;overflow-y: scroll', 
+                                   #             tableOutput('http.hostname.table')
+                                   #              #%>% withSpinner(color="#0dc5c1")
+                                   #             )
+                                   #        )
+                                   #     )
+                                   #  )
                                    )
                                  
 )
@@ -57,14 +57,14 @@ tabItem_http_dashboard <-tabItem(tabName = "http_dash",
 ####--UI SOLUTION--------------------------------------------------------------------------------------------
 
 
-tabItem_http_table <-tabItem(tabName = "http_table",
+tabItem_alert_table <-tabItem(tabName = "alert_table",
       fluidRow(
         box(
           
           width = 12, status = "info", solidHeader = TRUE,
-          title = "HTTP Traffic Details",
+          title = "Traffic Alert Details",
           div(style = 'overflow-y: scroll;overflow-x: scroll', 
-              DTOutput('http.table') 
+              DTOutput('alert.table') 
               #%>% withSpinner(color="#0dc5c1")
           )
         )
@@ -73,10 +73,10 @@ tabItem_http_table <-tabItem(tabName = "http_table",
         column(
           width = 3,
           #offset = 9,
-          downloadButton("http.download_csv", "Download as CSV")
+          downloadButton("alert.download_csv", "Download as CSV")
         )
       )
-      #    verbatimTextOutput("http.raw"),
+      #    verbatimTextOutput("alert.raw"),
       
 )
 
@@ -89,19 +89,19 @@ tabItem_http_table <-tabItem(tabName = "http_table",
 #
 
 
-tabItem_http_map <-
-  tabItem(tabName = "http_map",
+tabItem_alert_map <-
+  tabItem(tabName = "alert_map",
           fluidRow(
             column(width = 6,
-                   h2(icon("globe-asia"), HTML("&nbsp;"),"HTTP Traffic Origin Map")
+                   h2(icon("globe-asia"), HTML("&nbsp;"),"Traffic Alert Map")
             )
           ),
-          tabPanel(
-            'Map', br(),
+           tabPanel(
+             'Alert Map', br(),
             fluidRow(
               box(
                 title = NULL, width = 12, background = NULL,
-                leafletOutput(outputId = "http_map") 
+                leafletOutput(outputId = "alert_map_leaflet") 
                 %>% withSpinner(color="#0dc5c1")
                 ,
                 br(),
@@ -109,7 +109,7 @@ tabItem_http_map <-
                   column(width = 6,
                          actionBttn(
                            inputId = "zoom_australia_button",
-                           label = "Australia", 
+                           label = "Australia",
                            style = "gradient",
                            color = "primary",
                            icon = icon("search-location")
@@ -131,12 +131,9 @@ tabItem_http_map <-
                            style = "gradient",
                            color = "primary"
                          ))
-                ),
-                br(),
-                dataTableOutput("geo_testmap_dt"),
-                br()
+                )
               )
-            )
+             )
           )
   )
 

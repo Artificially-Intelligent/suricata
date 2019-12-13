@@ -43,3 +43,10 @@ iplookup <- function(x){
 subset_colclasses <- function(x, colclasses = c("numeric","character","factor", "integer","datetime")) {
   x[,sapply(x, function(vec, test) class(vec) %in% test, test=colclasses)]
 }
+
+
+simple_cap <- function(x) {
+  s <- strsplit(x, " ")[[1]]
+  paste(toupper(substring(s, 1,1)), substring(s, 2),
+        sep="", collapse=" ")
+}

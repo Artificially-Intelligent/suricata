@@ -187,11 +187,11 @@ tabItem_flow_map <-
             )
           ),
           tabPanel(
-            'Map', br(),
+            'Flow Map', br(),
             fluidRow(
               box(
                 title = NULL, width = 12, background = NULL,
-                leafletOutput(outputId = "flow_map") 
+                leafletOutput(outputId = "flow_map_leaflet") 
                 %>% withSpinner(color="#0dc5c1")
                 ,
                 br(),
@@ -221,10 +221,7 @@ tabItem_flow_map <-
                            style = "gradient",
                            color = "primary"
                          ))
-                ),
-                br(),
-                dataTableOutput("geo_testmap_dt"),
-                br()
+                )
               )
             )
           )

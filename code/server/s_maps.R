@@ -2,65 +2,122 @@
 #### Draw the map ####
 
 # starting map
-output$http_map <- renderLeaflet({
-  print('rendering map step 1')
+output$http_map_leaflet <- renderLeaflet({
+  
+    print('rendering map step 1')
   #user_settings <- user_settings()
   df <-mapData(http_data(),event_type = 'http')
   
-  lat_bounds <- c(max(c(df$src_lat,df$dest_lat)), min(c(df$src_lat,df$dest_lat)))
-  lng_bounds <- c(max(c(df$src_long,df$dest_long)), min(c(df$src_lat,df$dest_long)))
-  # browser()
-  m <- leaflet() %>%
-    addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
-    addMapPane("top_circles", zIndex = 430) %>%
+  if(nrow(df) > 0){
     
-    #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
-    fitBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2]) %>%
-    addCircles_f(df) 
-  
-  m
+    lat_bounds <- c(max(c(df$lat)), min(c(df$lat)))
+    lng_bounds <- c(max(c(df$long)), min(c(df$long)))
+    
+    m <- leaflet() %>%
+      addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+      addMapPane("top_circles", zIndex = 430) %>%
+      
+      #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
+      fitBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2]) %>%
+      addCircles_f(df) 
+    
+    m
+  }else{
+    leaflet() %>%
+      addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+      addMapPane("top_circles", zIndex = 430)
+  }
 })
 
 # starting map
-output$flow_map <- renderLeaflet({
+output$flow_map_leaflet <- renderLeaflet({
   print('rendering map step 1')
   #user_settings <- user_settings()
   df <-mapData(flow_data(),event_type = 'flow')
 
-  lat_bounds <- c(max(c(df$src_lat,df$dest_lat)), min(c(df$src_lat,df$dest_lat)))
-  lng_bounds <- c(max(c(df$src_long,df$dest_long)), min(c(df$src_lat,df$dest_long)))
-
-  m <- leaflet() %>%
-    addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
-    addMapPane("top_circles", zIndex = 430) %>%
-
-    #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
-    fitBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2]) %>%
-    addCircles_f(df)
-
-  m
+  if(nrow(df) > 0){
+    
+    lat_bounds <- c(max(c(df$lat)), min(c(df$lat)))
+    lng_bounds <- c(max(c(df$long)), min(c(df$long)))
+    
+    print(paste("map rows:",nrow(df)))
+    
+    m <- leaflet() %>%
+      addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+      addMapPane("top_circles", zIndex = 430) %>%
+  
+      #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
+      fitBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2]) %>%
+      addCircles_f(head(df,1000))
+  
+    m
+  }else{
+    leaflet() %>%
+      addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+      addMapPane("top_circles", zIndex = 430)
+  }
 })
 
 
 # starting map
-output$netflow_map <- renderLeaflet({
+output$netflow_map_leaflet <- renderLeaflet({
+
   print('rendering map step 1')
   #user_settings <- user_settings()
+  
   df <-mapData(netflow_data(),event_type = 'netflow')
 
-  lat_bounds <- c(max(c(df$src_lat,df$dest_lat)), min(c(df$src_lat,df$dest_lat)))
-  lng_bounds <- c(max(c(df$src_long,df$dest_long)), min(c(df$src_lat,df$dest_long)))
-
-  m <- leaflet() %>%
-    addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
-    addMapPane("top_circles", zIndex = 430) %>%
-
-    #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
-    fitBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2]) %>%
-    addCircles_f(df)
-
-  m
+  if(nrow(df) > 0){
+    
+    lat_bounds <- c(max(c(df$lat)), min(c(df$lat)))
+    lng_bounds <- c(max(c(df$long)), min(c(df$long)))
+    
+    m <- leaflet() %>%
+      addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+      addMapPane("top_circles", zIndex = 430) %>%
+  
+      #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
+      fitBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2]) %>%
+      addCircles_f(df)
+  
+    m
+  }else{
+    leaflet() %>%
+      addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+      addMapPane("top_circles", zIndex = 430)
+  }
 })
+
+
+
+# starting map
+output$alert_map_leaflet <- renderLeaflet({
+  
+  print('rendering map step 1')
+  #user_settings <- user_settings()
+  df <-mapData(alert_data(), event_type = 'alert')
+
+  if(! is.null(df) && nrow(df) > 0){
+    
+  lat_bounds <- c(max(c(df$lat)), min(c(df$lat)))
+  lng_bounds <- c(max(c(df$long)), min(c(df$long)))
+  
+    m <- leaflet() %>%
+      addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+      addMapPane("top_circles", zIndex = 430) %>%
+      
+      #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
+      fitBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2]) %>%
+      addCircles_f(df)
+    
+    m
+  }else{
+    leaflet() %>%
+      addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+      addMapPane("top_circles", zIndex = 430)
+  }
+})
+
 
 
 
