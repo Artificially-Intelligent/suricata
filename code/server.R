@@ -78,6 +78,20 @@ auth0_server(function(input, output, session, options) {
                              icon = icon("table")
                  )         
         ),
+        menuItem("DNS",icon = icon("cube"),
+                 menuSubItem("DNS Dashboard", 
+                             tabName = "dns_dash", 
+                             icon = icon("dashboard")
+                 ),
+                 menuSubItem("DNS Map", 
+                             tabName = "dns_map", 
+                             icon = icon("globe-asia")
+                 ),
+                 menuSubItem("DNS Detail", 
+                             tabName = "dns_table", 
+                             icon = icon("table")
+                 )         
+        ),
         menuItem("Flow",icon = icon("code-branch"),
                  menuSubItem("Flow Dashboard", 
                              tabName = "flow_dash", 
@@ -199,6 +213,12 @@ auth0_server(function(input, output, session, options) {
       # ,tabItem_alert_dashboard
        # ,tabItem_alert_map
       # ,tabItem_alert_table
+      
+      
+      ,tabItem_dashboard('dns')
+      ,tabItem_map('dns')
+      ,tabItem_table('dns')
+      
     )
   })
   
@@ -244,9 +264,10 @@ auth0_server(function(input, output, session, options) {
   source('server/s_http.R', local = TRUE)
   source('server/s_flow.R', local = TRUE)
   source('server/s_netflow.R', local = TRUE)
-  source('server/s_dns.R', local = TRUE)
   source('server/s_alert.R', local = TRUE)
 
+  source('server/s_event.R', local = TRUE)
+  
   source('server/s_maps.R', local = TRUE)
 
   source('server/s_user.R', local = TRUE)
@@ -334,6 +355,28 @@ print(output_type)
     bubbles(df$event_count, df$event_type, key = df$event_type)
   })
   #hide_waiter()
+  
+  
+  
+  dns_data <- alertData(event_stream, max_age_secs, event_type = "dns")
+  
+  # DNS Dashboard
+  output$dns.rate <- renderValueBox_rate( event_type = "dns", event_data = dns_data)
+  output$dns.destinations <- renderValueBox_destinations(event_stream = event_stream, event_type = "dns")
+  output$dns.requests <- renderValueBox_requests(event_stream = event_stream, event_type = "dns")
+  output$dns.bytes <- renderValueBox_requests(event_stream = event_stream, event_type = "dns")
+  output$dns.report_period <- renderText_report_period(event_data = dns_data, event_type = "dns")
+  output$dns.destination.bubbleplot <- renderBubbles_dest_ip(event_data = dns_data, event_type = "dns")
+  output$dns.destination.table <- renderTable_dest_ip(event_data = dns_data, event_type = "dns")
+  
+  # DNS Table
+  output$dns.table <- renderDT_table(event_data = dns_data, event_type = "dns")
+  output$dns.download_csv <-downloadHandler_csv(event_data = dns_data, event_type = "dns")
+    
+  # DNS Map
+  output$dns_map_leaflet <- renderLeaflet_map_destination(event_data = dns_data, event_type = "dns", color_column = 'dns.type')
+  
+  
   
 }
 , info = a0_info)  

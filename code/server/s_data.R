@@ -513,14 +513,14 @@ eventCount <- function(alrtStream, timeWindow, event_type = '') {
   )
 }
 
-mapData <- function(alrtData, event_type = '') {
+mapData <- function(alrtData, event_type = '' , color_column  = 'event_type') {
 
   if(event_type == ''){
     event_type <- event_types
   }
   e_type <- event_type
     
-  color_field <- 'app_proto'
+
   # df <- formatted_lines[names(data_row_template)]
   df <- alrtData  %>%
     filter(event_type %in% e_type)
@@ -531,23 +531,16 @@ mapData <- function(alrtData, event_type = '') {
   # df <- formatted_lines[names(data_row_template)]
   
   print(paste('map rows:', nrow(df)))
-  
-  if(event_type == 'http' && ! is.null(df$event_type)){
-    color_factor <- as.factor(df$event_type)
-    color_set <- data.frame(event_type = levels(color_factor),
-                            color = I(brewer.pal(nlevels(color_factor), name = 'Dark2')))    
-  }else{
-    if(event_type == 'alert' && ! is.null(df$alert.category)){
-      color_factor <- as.factor(df$alert.category)
-      print(levels(color_factor))
-      color_set <- data.frame(alert.category = levels(color_factor),
-                              color = I(brewer.pal(nlevels(color_factor), name = 'Dark2')))
-    }else{
-      color_factor <- as.factor(df$app_proto)
-      color_set <- data.frame(app_proto = levels(color_factor),
-                              color = I(brewer.pal(nlevels(color_factor), name = 'Dark2')))
-    }
+
+  if(is.null(df[color_column])){
+    color_column <- 'event_type'
   }
+
+  color_factor <- as.factor( df[,color_column] )
+  color_set <- data.frame(levels(color_factor),
+                          color = I(brewer.pal(nlevels(color_factor), name = 'Dark2')))
+  names(color_set) <- c(color_column,'color')
+  
   
   total_requests <- nrow(df)
   

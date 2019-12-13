@@ -6,7 +6,7 @@ output$http_map_leaflet <- renderLeaflet({
   
     print('rendering map step 1')
   #user_settings <- user_settings()
-  df <-mapData(http_data(),event_type = 'http')
+  df <-mapData(http_data(),event_type = 'http', color_column = 'http.status')
   
   if(nrow(df) > 0){
     
@@ -33,7 +33,7 @@ output$http_map_leaflet <- renderLeaflet({
 output$flow_map_leaflet <- renderLeaflet({
   print('rendering map step 1')
   #user_settings <- user_settings()
-  df <-mapData(flow_data(),event_type = 'flow')
+  df <-mapData(flow_data(),event_type = 'flow', color_column = 'app_proto')
 
   if(nrow(df) > 0){
     
@@ -65,7 +65,7 @@ output$netflow_map_leaflet <- renderLeaflet({
   print('rendering map step 1')
   #user_settings <- user_settings()
   
-  df <-mapData(netflow_data(),event_type = 'netflow')
+  df <-mapData(netflow_data(),event_type = 'netflow', color_column = 'app_proto')
 
   if(nrow(df) > 0){
     
@@ -95,7 +95,7 @@ output$alert_map_leaflet <- renderLeaflet({
   
   print('rendering map step 1')
   #user_settings <- user_settings()
-  df <-mapData(alert_data(), event_type = 'alert')
+  df <-mapData(alert_data(), event_type = 'alert', color_column = 'alert.category')
 
   if(! is.null(df) && nrow(df) > 0){
     
