@@ -269,15 +269,22 @@ renderPlotly_app_proto_server_averaged_bytes.barplot <- function(event_data = al
 }
 
 # output$http_map_leaflet <- 
-renderLeaflet_map_destination <- function(event_data = all_data, event_type = "all"){
+renderLeaflet_map_destination <- function(event_data = all_data, event_type = "all", color_column = 'event_type'){
   renderLeaflet({
     #user_settings <- user_settings()
-    df <-mapData(event_data(),event_type = event_type)
+    df <-mapData(event_data(),event_type = event_type, color_column = color_column)
     
     if(nrow(df) > 0){
-      
       lat_bounds <- c(max(c(df$lat)), min(c(df$lat)))
       lng_bounds <- c(max(c(df$long)), min(c(df$long)))
+      
+      
+      # if only one map item
+      if(lat_bounds[1]-lat_bounds[2] == 0 || lng_bounds[1]-lng_bounds[2] == 0 ){
+        print( 'only one map entry, expanding map bounds')
+        lat_bounds <- lat_bounds + c(1,-1)
+        lng_bounds <- lng_bounds + c(1,-1)
+      }
       
       m <- leaflet() %>%
         addProviderTiles(providers$Esri.WorldGrayCanvas) %>%

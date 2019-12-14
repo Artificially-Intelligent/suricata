@@ -532,15 +532,19 @@ mapData <- function(alrtData, event_type = '' , color_column  = 'event_type') {
   
   print(paste('map rows:', nrow(df)))
 
-  if(is.null(df[color_column])){
+  color_factor <- as.factor( df[,color_column] )
+  
+  if(is.null(df[color_column]) 
+     # || nlevels(color_factor) < 2
+     ){
+    print('defaulting color_column to event_type')
     color_column <- 'event_type'
   }
-
+  
   color_factor <- as.factor( df[,color_column] )
   color_set <- data.frame(levels(color_factor),
-                          color = I(brewer.pal(nlevels(color_factor), name = 'Dark2')))
+                          color = I(brewer.pal(nlevels(color_factor), name = 'Dark2')[1:nlevels(color_factor)]))
   names(color_set) <- c(color_column,'color')
-  
   
   total_requests <- nrow(df)
   
@@ -577,6 +581,10 @@ mapData <- function(alrtData, event_type = '' , color_column  = 'event_type') {
         '<div class="alert_details">HTTP Server(s):', paste(Filter(Negate(is.na),unique( http.server)),collapse =', '), '</div>',
         '<div class="alert_details">HTTP Method(s):', paste(Filter(Negate(is.na),unique( http.http_method)),collapse =', '), '</div>',
         '<div class="alert_details">HTTP Bytes:', sum(http.length, na.rm=T ), '</div>'
+      )),
+      (if('dns' %in% event_type) paste(
+        '<div class="alert_details">DNS Resource Record(s):',paste(Filter(Negate(is.na),unique( dns.rrname)),collapse =',\n'), '</div>',
+        '<div class="alert_details">DNS Message Type(s):', paste(Filter(Negate(is.na),unique( dns.type)),collapse =', '), '</div>'
       )),
       (if('alert' %in% event_type) paste(
         '<div class="alert_details">Alert Category(s):',paste(Filter(Negate(is.na),unique( alert.category)),collapse =',\n'), '</div>',

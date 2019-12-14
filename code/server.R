@@ -92,6 +92,20 @@ auth0_server(function(input, output, session, options) {
                              icon = icon("table")
                  )         
         ),
+        menuItem("TLS",icon = icon("cube"),
+                 menuSubItem("tls Dashboard", 
+                             tabName = "tls_dash", 
+                             icon = icon("dashboard")
+                 ),
+                 menuSubItem("tls Map", 
+                             tabName = "tls_map", 
+                             icon = icon("globe-asia")
+                 ),
+                 menuSubItem("tls Detail", 
+                             tabName = "tls_table", 
+                             icon = icon("table")
+                 )         
+        ),
         menuItem("Flow",icon = icon("code-branch"),
                  menuSubItem("Flow Dashboard", 
                              tabName = "flow_dash", 
@@ -218,6 +232,10 @@ auth0_server(function(input, output, session, options) {
       ,tabItem_dashboard('dns')
       ,tabItem_map('dns')
       ,tabItem_table('dns')
+      
+      ,tabItem_dashboard('tls')
+      ,tabItem_map('tls')
+      ,tabItem_table('tls')
       
     )
   })
@@ -357,6 +375,7 @@ print(output_type)
   #hide_waiter()
   
   
+  # DNS
   
   dns_data <- alertData(event_stream, max_age_secs, event_type = "dns")
   
@@ -376,6 +395,47 @@ print(output_type)
   # DNS Map
   output$dns_map_leaflet <- renderLeaflet_map_destination(event_data = dns_data, event_type = "dns", color_column = 'dns.type')
   
+  
+  # tls
+  
+  tls_data <- alertData(event_stream, max_age_secs, event_type = "tls")
+  
+  # tls Dashboard
+  output$tls.rate <- renderValueBox_rate( event_type = "tls", event_data = tls_data)
+  output$tls.destinations <- renderValueBox_destinations(event_stream = event_stream, event_type = "tls")
+  output$tls.requests <- renderValueBox_requests(event_stream = event_stream, event_type = "tls")
+  output$tls.bytes <- renderValueBox_requests(event_stream = event_stream, event_type = "tls")
+  output$tls.report_period <- renderText_report_period(event_data = tls_data, event_type = "tls")
+  output$tls.destination.bubbleplot <- renderBubbles_dest_ip(event_data = tls_data, event_type = "tls")
+  output$tls.destination.table <- renderTable_dest_ip(event_data = tls_data, event_type = "tls")
+  
+  # tls Table
+  output$tls.table <- renderDT_table(event_data = tls_data, event_type = "tls")
+  output$tls.download_csv <-downloadHandler_csv(event_data = tls_data, event_type = "tls")
+  
+  # tls Map
+  output$tls_map_leaflet <- renderLeaflet_map_destination(event_data = tls_data, event_type = "tls")
+  
+  
+  # drop
+  
+  drop_data <- alertData(event_stream, max_age_secs, event_type = "drop")
+  
+  # drop Dashboard
+  output$drop.rate <- renderValueBox_rate( event_type = "drop", event_data = drop_data)
+  output$drop.destinations <- renderValueBox_destinations(event_stream = event_stream, event_type = "drop")
+  output$drop.requests <- renderValueBox_requests(event_stream = event_stream, event_type = "drop")
+  output$drop.bytes <- renderValueBox_requests(event_stream = event_stream, event_type = "drop")
+  output$drop.report_period <- renderText_report_period(event_data = drop_data, event_type = "drop")
+  output$drop.destination.bubbleplot <- renderBubbles_dest_ip(event_data = drop_data, event_type = "drop")
+  output$drop.destination.table <- renderTable_dest_ip(event_data = drop_data, event_type = "drop")
+  
+  # drop Table
+  output$drop.table <- renderDT_table(event_data = drop_data, event_type = "drop")
+  output$drop.download_csv <-downloadHandler_csv(event_data = drop_data, event_type = "drop")
+  
+  # drop Map
+  output$drop_map_leaflet <- renderLeaflet_map_destination(event_data = drop_data, event_type = "drop")
   
   
 }

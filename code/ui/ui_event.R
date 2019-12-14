@@ -115,7 +115,7 @@ tabItem_map <- function(event = "all") {
   leaflet_name <- paste(tab_name, "_leaflet",sep="")
   print(leaflet_name)
   if( event == "all"){
-    event_type <- "Event"  
+    event_type <- ""  
   }else{
     if( event == "http"){
       event_type <- "HTTP"  
