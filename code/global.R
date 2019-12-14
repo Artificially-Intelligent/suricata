@@ -6,24 +6,49 @@
   #
   
   library(shiny)
-  library(shinySignals)   # devtools::install_github("hadley/shinySignals")
   library(dplyr)
   library(shinydashboard)
-  library(bubbles)        # devtools::install_github("jcheng5/bubbles")
-  
   library(plotly)
   library(waiter)
-  
   library(tidyjson)
-  
   library(hrbrthemes)
-  
   library(jsonlite)
   
-  library(promises)
-  library(future)
+  library(bubbles)        # devtools::install_github("jcheng5/bubbles")
+  library(shinySignals)   # devtools::install_github("hadley/shinySignals")
   
-  plan(multiprocess)
+  
+  library(tidyverse)
+  library(shiny)
+  library(shinycssloaders)
+  library(shinydashboard)
+  library(shinydashboardPlus)
+  library(shinyjs)
+  library(shinyWidgets)
+  library(DT)
+  library(dygraphs)
+  library(gridExtra)
+  library(RColorBrewer)
+  library(leaflet)
+  library(leaflet.extras)
+  library(tmaptools)
+  library(tibbletime)
+  library(data.table)
+  library(broom)
+  library(purrr)
+  library(scales)
+  library(lubridate)
+  library(janitor)
+  library(readxl)
+  library(glue)
+  library(dotenv)
+  library(auth0)
+  library(httr)
+  library(shinyjqui)
+  library(shinyAce)
+  library(styler)
+  library(shinyEffects)
+  library(summarytools) 
   
   my_packages <- c('tidyverse','shiny', 'shinycssloaders', 
                    'shinydashboard', 'shinydashboardPlus', 'shinyjs', 'shinyWidgets', 

@@ -29,7 +29,11 @@ COPY /code ${WWW_DIR}
 COPY /data ${DATA_DIR}
 
 ## discover and install missing R-packages
-RUN Rscript -e "source('/etc/shiny-server/install_discovered_packages.R'); discover_and_install(default_packages_csv = '/etc/shiny-server/default_install_packages.csv', discovery_directory_root = '${DATA_DIR}', discovery = TRUE);" 
+RUN Rscript -e "source('/etc/shiny-server/install_discovered_packages.R'); discover_and_install(default_packages_csv = '/etc/shiny-server/default_install_packages.csv', discovery_directory_root = '${WWW_DIR}', discovery = TRUE);" 
+
+# install non cran packages from github hadley/shinySignals and jcheng5/bubbles
+ARG GITHUB_PACKAGES="'hadley/shinySignals','jcheng5/bubbles'"
+RUN R -e "remotes::install_github(c($GITHUB_PACKAGES))"
 
 ## Start Shiny Server ##
 CMD ["/usr/bin/shiny-server.sh"]
