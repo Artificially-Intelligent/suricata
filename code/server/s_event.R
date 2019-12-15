@@ -6,6 +6,8 @@
 # flow_destination_count <- destinationCount(event_stream,event_type='flow')
 # flow_bytes_total <-  totalBytes(event_stream,event_type='flow')
 
+
+
 # output$flow.rate <- 
 renderValueBox_rate <- function(event_data = all_data, event_type = "all"){
   renderValueBox({
@@ -268,16 +270,22 @@ renderPlotly_app_proto_server_averaged_bytes.barplot <- function(event_data = al
   })
 }
 
+
 # output$http_map_leaflet <- 
 renderLeaflet_map_destination <- function(event_data = all_data, event_type = "all", color_column = 'event_type'){
   renderLeaflet({
     #user_settings <- user_settings()
-    df <-mapData(event_data(),event_type = event_type, color_column = color_column)
+    df <- mapData(event_data(),event_type = event_type, color_column = color_column)
     
-    if(nrow(df) > 0){
-      lat_bounds <- c(max(c(df$lat)), min(c(df$lat)))
-      lng_bounds <- c(max(c(df$long)), min(c(df$long)))
+    if(! is.null(df)){
       
+      if(! is.null(isolate(u$last_lng_bounds)) && ! is.null(isolate(u$last_lat_bounds))){
+        lat_bounds <- isolate(u$last_lat_bounds)
+        lng_bounds <- isolate(u$last_lng_bounds)
+      }else{
+        lat_bounds <- c(max(c(df$lat)), min(c(df$lat)))
+        lng_bounds <- c(max(c(df$long)), min(c(df$long)))
+      }
       
       # if only one map item
       if(lat_bounds[1]-lat_bounds[2] == 0 || lng_bounds[1]-lng_bounds[2] == 0 ){
@@ -301,4 +309,63 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
         addMapPane("top_circles", zIndex = 430)
     }
   })
+}
+
+leaflet_mapdata <- function(event_data = all_data, event_type = "all"){
+  df <- event_data() %>%
+    mutate(country_name = dest_country_name, country_code = dest_country_code, city = dest_city, 
+                            ip = dest_ip, long = dest_long,lat = dest_lat)
+
+    bounds <- input$dns_map_leaflet_bounds
+    if (is.null(bounds)){
+      df
+    } else {
+      in_bounding_box(df, bounds)
+    }
+}
+
+
+renderValueBox_mapvalue_count <- function(event_data = all_data, event_type = "all", value_column = 'event_type'){
+  renderValueBox({
+    dt <- leaflet_mapdata(event_data = event_data, event_type = event_type) 
+    
+    valueBox(
+      length(Filter(Negate(is.null), dt[,value_column])),
+      value_column,
+      icon = icon("chart-line")
+    )
+  })
+  
+}
+
+renderDT_maptable_destination <- function(event_data = all_data, event_type = "all", color_column = 'event_type'){
+  renderDT({
+    dt <- leaflet_mapdata(event_data = event_data, event_type = event_type) 
+    
+    # browser()
+    # dt$dns.rrtype
+    # dt$dns.rrtype
+    # dt$dns.answers.count <- length(dt[,'dns.answers'])
+    # p <- ggplot(data = dt, aes(dt$dns.rrtype)) +
+    #   geom_bar()
+    #   # geom_point(aes(text = paste("Clarity:", clarity)), size = 4) +
+    #   # geom_smooth(aes(colour = cut, fill = cut)) + facet_wrap(~ cut)
+    # 
+    # ggplotly(p)
+    # 
+    
+    dt  %>%
+      mutate(timestamp = as_datetime(timestamp, tz = Sys.timezone(location = TRUE))
+             # ,flow.start = as_datetime(flow.start, tz = Sys.timezone(location = TRUE))
+             # ,flow.end = as_datetime(flow.end, tz = Sys.timezone(location = TRUE))  
+      ) %>%
+      select(-flow_id,-event_type,-host) %>%
+      remove_empty(which = c("rows", "cols")) %>%
+      as.data.frame()
+    
+  }, 
+  class = "display nowrap compact", # style
+  filter = "top", # location of column filters
+  options = list(scrollX = TRUE)
+  )
 }

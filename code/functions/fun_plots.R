@@ -19,7 +19,7 @@ df_grouped <- df
                            radius =  df_grouped$radius,
                            fillColor = df_grouped$color,
                            #icon = ~map_icons[df$pt_domr],
-                           # clusterOptions = markerClusterOptions(iconCreateFunction=JS(clusterJS)) ,
+                           #clusterOptions = markerClusterOptions(iconCreateFunction=JS(clusterJS)) ,
                            popup = df_grouped$popup_html,
                            popupOptions = popupOptions(closeButton = FALSE), 
                            options = pathOptions(pane = "top_circles")
@@ -47,3 +47,13 @@ clusterJS <- "function (cluster) {
                         return new L.DivIcon({ html: '<div><span>' + childCount + '</span></div>', className: 'marker-cluster' + c, iconSize: new L.Point(40, 40) });
                     
                       }"
+
+in_bounding_box <- function(data, bounds) {
+  data %>%
+    dplyr::filter(
+        lat > bounds$south &
+        lat < bounds$north &
+        long < bounds$east & 
+        long > bounds$west
+    )
+}

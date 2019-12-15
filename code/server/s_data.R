@@ -202,19 +202,19 @@ alertStream <- function(session) {
   # Connect to data source
   
   
-  if (! redux::redis_available(host = 'unraiden.local'))
+  if (! redux::redis_available(host = redis_host))
     return(data_row_template)
   
-  r <- redux::hiredis(host = 'unraiden.local')
+  r <- redux::hiredis(host = redis_host)
   r$PING()
   
-  # redis_index_end <- r$LLEN(key='suricata')
+  # redis_index_end <- r$LLEN(key=redis_key)
   # redis_index_last_loaded <- 0
   # 
   # Returns new lines
   newLines <- reactive({
     
-    redis_index_end <- r$LLEN(key='suricata')
+    redis_index_end <- r$LLEN(key=redis_key)
     redis_index_last_loaded <- isolate(data_load_status$redis_index_last_loaded)
     redis_timestamp_num_last_loaded <- isolate(data_load_status$redis_timestamp_last_loaded)
     
@@ -557,10 +557,12 @@ mapData <- function(alrtData, event_type = '' , color_column  = 'event_type') {
     filter(event_type %in% e_type) %>%
     mutate(country_name = dest_country_name, country_code = dest_country_code, city = dest_city, 
            ip = dest_ip, long = dest_long,lat = dest_lat) %>%
-    group_by(country_name, country_code, city, ip, long, lat, color) %>%
+    group_by(country_name, country_code, city, 
+            # ip, 
+             long, lat, color) %>%
     summarise( popup_html = (paste(
       '<div class="alert_details_name"><h4>', unique(dest_city), " (", unique(dest_country_code) , ')<h4></div>',
-      '<div class="alert_details">IP Address', unique(dest_ip), '</div>',
+      '<div class="alert_details">IP Address(s)', paste(Filter(Negate(is.na),unique(dest_ip)),collapse =',\n'), '</div>',
       '<div class="alert_details">Event Type(s):',paste(Filter(Negate(is.na),unique( event_type)),collapse =',\n'), '</div>',
       '<div class="alert_details">Traffic Type(s):',paste(Filter(Negate(is.na),unique( app_proto)),collapse =',\n'), '</div>',
       '<div class="alert_details">Requests:', n(), '</div>',

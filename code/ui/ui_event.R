@@ -62,7 +62,6 @@ tabItem_dashboard <- function(event = "all") {
              title = paste(table_title, sep = "" ),
              div(style = 'height:220px;overflow-y: scroll', 
                  tableOutput(table_outputId)
-                  #%>% withSpinner(color="#0dc5c1")
                  )
             )
          )
@@ -112,8 +111,11 @@ tabItem_table <- function(event = "all") {
 
 tabItem_map <- function(event = "all") {
   tab_name <- paste(event,"_map",sep="")
-  leaflet_name <- paste(tab_name, "_leaflet",sep="")
-  print(leaflet_name)
+  leaflet_outputId <- paste(tab_name, "_leaflet",sep="")
+  DT_outputId <- paste(tab_name,"_table",sep="")
+  
+  value_box_1_outputId <- paste(tab_name,".count",sep="")
+  
   if( event == "all"){
     event_type <- ""  
   }else{
@@ -125,7 +127,6 @@ tabItem_map <- function(event = "all") {
   } 
   tab_title <- paste(event_type ,  'Map')
   
-  
   tabItem(tabName = tab_name,
           fluidRow(
             column(width = 6,
@@ -136,9 +137,22 @@ tabItem_map <- function(event = "all") {
           #   br()
             ,fluidRow(
               # box(
-                title = NULL, width = 12, background = NULL,
-                leafletOutput(outputId = leaflet_name) 
-                %>% withSpinner(color="#0dc5c1")
+                title = NULL, 
+                width = 12, 
+                background = NULL,
+                column(
+                  width = 8, 
+                  leafletOutput(outputId = leaflet_outputId)
+                  %>% withSpinner(color="#0dc5c1")
+                  
+                ),
+                column(
+                  width = 4, 
+                  valueBoxOutput(value_box_1_outputId),
+                  DTOutput(outputId = DT_outputId)
+                  %>% withSpinner(color="#0dc5c1")
+                  
+                )
                 
                 # ,br()
                 # ,fluidRow(

@@ -203,7 +203,7 @@ auth0_server(function(input, output, session, options) {
       ,tabItem_dashboard('flow')
       ,tabItem_map('flow')
       ,tabItem_table('flow')
-      ,tabItem_flow_app_traffic
+      # ,tabItem_flow_app_traffic
       
       
       # ,tabItem_flow_dashboard
@@ -394,8 +394,9 @@ print(output_type)
     
   # DNS Map
   output$dns_map_leaflet <- renderLeaflet_map_destination(event_data = dns_data, event_type = "dns", color_column = 'dns.type')
-  
-  
+  output$dns_map_table   <- renderDT_maptable_destination(event_data = dns_data, event_type = "dns", color_column = 'dns.type')
+  output$dns_map.count   <- renderValueBox_mapvalue_count(event_data = dns_data, event_type = "dns", value_column = 'dns.answers')
+    
   # tls
   
   tls_data <- alertData(event_stream, max_age_secs, event_type = "tls")

@@ -1,12 +1,12 @@
 # Base image https://cloud.docker.com/repository/docker/slink42/rbase_processing
 # which in turn uses the base image https://hub.docker.com/u/rocker/
 
-ARG SOURCE_IMAGE=artificiallyintelligent/shiny:latest
+ARG SOURCE_IMAGE=artificiallyintelligent/shiny_lite:latest
 FROM $SOURCE_IMAGE
 
 # build arguments
 ARG PROJECT_ENV=dev
-ARG PROJECT=datathon2019
+ARG PROJECT=suricata
 ARG DOCKER_REPO_ROOT=artificiallyintelligent
 ARG BUILD_DATE
 ARG VERSION=0.x.x
@@ -29,10 +29,16 @@ COPY /code ${WWW_DIR}
 COPY /data ${DATA_DIR}
 
 ## discover and install missing R-packages
-RUN Rscript -e "source('/etc/shiny-server/install_discovered_packages.R'); discover_and_install(default_packages_csv = '/etc/shiny-server/default_install_packages.csv', discovery_directory_root = '${WWW_DIR}', discovery = TRUE);" 
+ENV GITHUB_PACKAGES="'hadley/shinySignals','jcheng5/bubbles'"
+ENV REQUIRED_PACKAGES=redux
+
+RUN /usr/bin/install_package_dependencies.sh $REQUIRED_PACKAGES $REQUIRED_PACKAGES_PLUS
+RUN Rscript -e "source('/etc/shiny-server/install_discovered_packages.R'); discover_and_install(discovery_directory_root = '${WWW_DIR}', discovery = TRUE);" 
+RUN echo $FAILED_PACKAGES
+RUN /usr/bin/install_package_dependencies.sh $FAILED_PACKAGES
+RUN Rscript -e "source('/etc/shiny-server/install_discovered_packages.R'); discover_and_install(discovery_directory_root = '${WWW_DIR}');" 
 
 # install non cran packages from github hadley/shinySignals and jcheng5/bubbles
-ARG GITHUB_PACKAGES="'hadley/shinySignals','jcheng5/bubbles'"
 RUN R -e "remotes::install_github(c($GITHUB_PACKAGES))"
 
 ## Start Shiny Server ##
