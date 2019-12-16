@@ -394,9 +394,13 @@ print(output_type)
     
   # DNS Map
   output$dns_map_leaflet <- renderLeaflet_map_destination(event_data = dns_data, event_type = "dns", color_column = 'dns.type')
-  output$dns_map_table   <- renderDT_maptable_destination(event_data = dns_data, event_type = "dns", color_column = 'dns.type')
-  output$dns_map.count   <- renderValueBox_mapvalue_count(event_data = dns_data, event_type = "dns", value_column = 'dns.answers')
-    
+  output$dns_map_table_summary <- renderTable_maptable_summary(event_data = dns_data, event_type = "dns", value_column = 'dns.type')
+  output$dns_map_table_detail  <- renderDT_maptable_detail(event_data = dns_data, event_type = "dns")
+  output$dns_map.value.1   <- renderValueBox_mapvalue_count(event_data = dns_data, event_type = "dns", value_column = 'dns.rrname', filter_column = 'dns.type' ,filter_value = 'query', icon_name = "question-circle")
+  output$dns_map.value.2   <- renderValueBox_mapvalue_count(event_data = dns_data, event_type = "dns", value_column = 'dns.answers',icon_name = "reply")
+  output$dns_map.value.3   <- renderValueBox_mapvalue_count(event_data = dns_data, event_type = "dns", value_column = 'dns.rrname', unique_count =  TRUE,icon_name = "reply")
+  output$dns_map.value.4   <- renderValueBox_mapvalue_count(event_data = dns_data, event_type = "dns", value_column = 'dns.answers', unique_count =  TRUE,icon_name = "reply")
+  
   # tls
   
   tls_data <- alertData(event_stream, max_age_secs, event_type = "tls")

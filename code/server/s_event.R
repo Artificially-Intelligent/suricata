@@ -324,21 +324,128 @@ leaflet_mapdata <- function(event_data = all_data, event_type = "all"){
     }
 }
 
+# 
+# renderValueBox_mapvalue_count <- function(event_data = all_data, event_type = "all", value_column = 'event_type', value = ''){
+#   renderValueBox({
+#     dt <- leaflet_mapdata(event_data = event_data, event_type = event_type) 
+#     
+#     valueBox(
+#       length(Filter(Negate(is.null), dt[,value_column])),
+#       value_column,
+#       icon = icon("chart-line")
+#     )
+#   })
+#   
+# }
 
-renderValueBox_mapvalue_count <- function(event_data = all_data, event_type = "all", value_column = 'event_type'){
+renderValueBox_mapvalue_count <- function(event_data = all_data, event_type = "all", value_column = 'event_type', value = '', filter_column = '', filter_value = '', unique_count = FALSE, icon_name = "chart-line"){
   renderValueBox({
-    dt <- leaflet_mapdata(event_data = event_data, event_type = event_type) 
+    actual_value_column <- value_column
+    label <- value_column
+    if(nchar(value) > 0)
+      label <- paste(value,label)
+    if(unique_count)
+      label <- paste("unique",label)
+
+    dt <- leaflet_mapdata(event_data = event_data, event_type = event_type)
+    
+    #dt <- Filter(Negate(is.null), dt[,c(value_column,filter_column)])
+    
+    if(nrow(dt) == 0){
+      row_count <- 0
+    }else{
+      if(nchar(filter_column) > 0 && nchar(filter_value) > 0){
+        dt <-  dt[,c(value_column,filter_column)]
+        if(nrow(dt)>0)
+          dt <- dt[dt[filter_column] == filter_value,] %>%
+            remove_empty(which = c("rows", "cols")) 
+        dt$value_count <- 1
+      }else{
+        dt <-  dt[,c(value_column,'flow_id')]
+        dt$flow_id <- NA
+        if(typeof(dt[,value_column]) == 'list'){
+          # browser()
+          dt <- dt[unlist(lapply(dt[,value_column], (function(x) { !is.null(x)}))),]
+          dt$value_count <- unlist(lapply(dt[,value_column], (function(x) { if(!is.null(x)){nrow(x)}else{0}})))
+          
+          if(nrow(dt) > 0 && typeof(dt[,value_column]) == 'list')
+            if(length(names(dt[,value_column][[1]])) > 0)
+              actual_value_column <- names(dt[,value_column][[1]])[1]
+        }else{
+          dt <-  dt %>%
+            remove_empty(which = c("rows"))
+          dt$value_count <- 1
+        }
+        dt$flow_id <- NULL
+        if(nrow(dt) > 0)
+          colnames(dt) <- c(actual_value_column,"value_count")  
+      }
+      
+      
+      
+      if(nchar(value) > 0)
+        dt <- dt[dt[,actual_value_column] == value,]
+      
+       # browser()
+      
+      
+      if(value_column != actual_value_column)
+        label <- paste(label,actual_value_column,sep='.')
+      
+      if(unique_count){
+        row_count <- length(unique(dt[,actual_value_column]))
+      }else{
+        row_count <- sum(dt[,"value_count"])
+      }
+    }
+    
+    if(nchar(filter_column) > 0 && nchar(filter_value) > 0)
+      label <- paste(label, filter_value)
     
     valueBox(
-      length(Filter(Negate(is.null), dt[,value_column])),
-      value_column,
-      icon = icon("chart-line")
+      row_count,
+      label,
+      icon = icon(icon_name)
     )
   })
   
 }
 
-renderDT_maptable_destination <- function(event_data = all_data, event_type = "all", color_column = 'event_type'){
+renderTable_maptable_summary <- function(event_data = all_data, event_type = "all", value_column = 'event_type'){
+  renderTable({
+    
+    dt <- leaflet_mapdata(event_data = event_data, event_type = event_type)
+    dt <- Filter(Negate(is.null), dt[,value_column]) 
+    
+    dt <- data.frame(dt) %>%
+      group_by(dt) %>%
+      summarise(count = n())
+    
+    names(dt) <- c(value_column,'count')
+    dt
+    
+    # browser()
+    # dt$dns.rrtype
+    # dt$dns.rrtype
+    # dt$dns.answers.count <- length(dt[,'dns.answers'])
+    # p <- ggplot(data = dt, aes(dt$dns.rrtype)) +
+    #   geom_bar()
+    #   # geom_point(aes(text = paste("Clarity:", clarity)), size = 4) +
+    #   # geom_smooth(aes(colour = cut, fill = cut)) + facet_wrap(~ cut)
+    # 
+    # ggplotly(p)
+    # 
+    
+  }, 
+  class = "display nowrap compact", # style
+  filter = "top", # location of column filters
+  options = list(scrollX = TRUE)
+  )
+}
+
+
+
+renderDT_maptable_detail <- function(event_data = all_data, event_type = "all"){
   renderDT({
     dt <- leaflet_mapdata(event_data = event_data, event_type = event_type) 
     

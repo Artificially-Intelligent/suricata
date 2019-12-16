@@ -112,9 +112,13 @@ tabItem_table <- function(event = "all") {
 tabItem_map <- function(event = "all") {
   tab_name <- paste(event,"_map",sep="")
   leaflet_outputId <- paste(tab_name, "_leaflet",sep="")
-  DT_outputId <- paste(tab_name,"_table",sep="")
+  table_summary_outputId <- paste(tab_name,"_table_summary",sep="")
+  DT_detail_outputId <- paste(tab_name,"_table_detail",sep="")
   
-  value_box_1_outputId <- paste(tab_name,".count",sep="")
+  value_box_1_outputId <- paste(tab_name,".value.1",sep="")
+  value_box_2_outputId <- paste(tab_name,".value.2",sep="")
+  value_box_3_outputId <- paste(tab_name,".value.3",sep="")
+  value_box_4_outputId <- paste(tab_name,".value.4",sep="")
   
   if( event == "all"){
     event_type <- ""  
@@ -126,6 +130,9 @@ tabItem_map <- function(event = "all") {
     }
   } 
   tab_title <- paste(event_type ,  'Map')
+  summary_table_title <- paste(event_type, 'Summary')
+  detail_table_title <- paste(event_type, 'Detail')
+  
   
   tabItem(tabName = tab_name,
           fluidRow(
@@ -148,9 +155,20 @@ tabItem_map <- function(event = "all") {
                 ),
                 column(
                   width = 4, 
-                  valueBoxOutput(value_box_1_outputId),
-                  DTOutput(outputId = DT_outputId)
-                  %>% withSpinner(color="#0dc5c1")
+                  valueBoxOutput( width = 6, value_box_1_outputId),
+                  valueBoxOutput( width = 6, value_box_2_outputId),
+                  valueBoxOutput( width = 6, value_box_3_outputId),
+                  valueBoxOutput( width = 6, value_box_4_outputId),
+                  box( 
+                    width = 12,
+                    status = "info",
+                    solidHeader = FALSE,
+                    # title = paste(summary_table_title, sep = "" ),
+                    div(style = 'height:120px;overflow-y: scroll', 
+                      tableOutput(outputId = table_summary_outputId)
+                        %>% withSpinner(color="#0dc5c1")
+                    )
+                  )
                   
                 )
                 
@@ -184,6 +202,11 @@ tabItem_map <- function(event = "all") {
                 # )
               # )
             # )
+          ),fluidRow(
+            width = 12,
+            DTOutput(outputId = DT_detail_outputId)
+            %>% withSpinner(color="#0dc5c1")
+            
           )
   )
 }
