@@ -293,7 +293,14 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
         lat_bounds <- lat_bounds + c(1,-1)
         lng_bounds <- lng_bounds + c(1,-1)
       }
+      # browser()
       
+      current_map_bounds_var <- paste('input$', event_type,'_map_leaflet_bounds',sep='')
+      bounds <- isolate(eval(parse(text = current_map_bounds_var)))
+      if(!is.null(bounds)){
+        lat_bounds <- c(bounds$north,bounds$south)
+        lng_bounds <- c(bounds$east,bounds$west)
+      }
       m <- leaflet() %>%
         addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
         addMapPane("top_circles", zIndex = 430) %>%
@@ -316,7 +323,8 @@ leaflet_mapdata <- function(event_data = all_data, event_type = "all"){
     mutate(country_name = dest_country_name, country_code = dest_country_code, city = dest_city, 
                             ip = dest_ip, long = dest_long,lat = dest_lat)
 
-    bounds <- input$dns_map_leaflet_bounds
+    current_map_bounds_var <- paste('input$', event_type,'_map_leaflet_bounds',sep='')
+    bounds <- eval(parse(text = current_map_bounds_var))
     if (is.null(bounds)){
       df
     } else {
@@ -364,7 +372,7 @@ renderValueBox_mapvalue_count <- function(event_data = all_data, event_type = "a
         dt <-  dt[,c(value_column,'flow_id')]
         dt$flow_id <- NA
         if(typeof(dt[,value_column]) == 'list'){
-          # browser()
+           # browser()
           dt <- dt[unlist(lapply(dt[,value_column], (function(x) { !is.null(x)}))),]
           dt$value_count <- unlist(lapply(dt[,value_column], (function(x) { if(!is.null(x)){nrow(x)}else{0}})))
           
@@ -386,16 +394,17 @@ renderValueBox_mapvalue_count <- function(event_data = all_data, event_type = "a
       if(nchar(value) > 0)
         dt <- dt[dt[,actual_value_column] == value,]
       
-       # browser()
-      
-      
       if(value_column != actual_value_column)
         label <- paste(label,actual_value_column,sep='.')
       
       if(unique_count){
         row_count <- length(unique(dt[,actual_value_column]))
       }else{
-        row_count <- sum(dt[,"value_count"])
+        if(nrow(dt)==0){
+          row_count <- 0
+        }else{
+          row_count <- sum(dt[,"value_count"])
+        }
       }
     }
     

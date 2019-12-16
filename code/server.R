@@ -47,8 +47,8 @@ auth0_server(function(input, output, session, options) {
   output$ui_sidebar <- renderUI({
     dashboardSidebar(
       shinyWidgets::sliderTextInput("data_refresh_rate","Data refresh rate (seconds)",
-                     choices=c(0, 1, 3, 5, 10, 30, 60, 120, 180,300,600,900,1800,3600,86400,"disabled"),
-                     selected=5, grid = T),
+                     choices=c(0, 1, 3, 5, 10, 15, 30, 60, 120, 180,300,600,900,1800,3600,86400,"disabled"),
+                     selected=30, grid = T),
       # sliderInput("data_refresh_rate", "Data refresh rate (s)",
       #             min = 0, max = 3600, value = 10, step = 1
       # ),
