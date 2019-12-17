@@ -61,9 +61,9 @@
   
   # Global constants
   
-  enable_oauth_dev = TRUE # Set to FALSE to disable oAuth during development
+  enable_oauth_dev = FALSE # Set to FALSE to disable oAuth during development
   app_directory <- './'
-  project_name <- 'Suricata Dashboard'
+  project_name <- 'Suricata Events GUI'
   
   max_history_load_size <- 20000
   initial_history_load_size <- 100

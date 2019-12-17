@@ -306,14 +306,8 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
     df <- mapData(event_data(),event_type = event_type, color_column = color_column)
     
     if(! is.null(df)){
-      
-      if(! is.null(isolate(u$last_lng_bounds)) && ! is.null(isolate(u$last_lat_bounds))){
-        lat_bounds <- isolate(u$last_lat_bounds)
-        lng_bounds <- isolate(u$last_lng_bounds)
-      }else{
-        lat_bounds <- c(max(c(df$lat)), min(c(df$lat)))
-        lng_bounds <- c(max(c(df$long)), min(c(df$long)))
-      }
+      lat_bounds <- c(max(c(df$lat)), min(c(df$lat)))
+      lng_bounds <- c(max(c(df$long)), min(c(df$long)))
       
       # if only one map item
       if(lat_bounds[1]-lat_bounds[2] == 0 || lng_bounds[1]-lng_bounds[2] == 0 ){

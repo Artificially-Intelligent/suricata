@@ -521,8 +521,8 @@ print(output_type)
   output$tls.download_csv <-downloadHandler_csv(event_data = tls_data, event_type = "tls")
   
   # TLS Map
-  output$tls_map_leaflet <- renderLeaflet_map_destination(event_data = tls_data, event_type = "tls", color_column = 'tls_version')
-  output$tls_map_table_summary <- renderTable_maptable_summary(event_data = tls_data, event_type = "tls", value_column = 'tls_version')
+  output$tls_map_leaflet <- renderLeaflet_map_destination(event_data = tls_data, event_type = "tls", color_column = 'tls.version')
+  output$tls_map_table_summary <- renderTable_maptable_summary(event_data = tls_data, event_type = "tls", value_column = 'tls.version')
   output$tls_map_table_detail  <- renderDT_maptable_detail(event_data = tls_data, event_type = "tls")
   output$tls_map.value.1   <- renderValueBox_mapvalue(event_data = tls_data, event_type = "tls", value_column = 'tls.sni', opp = 'count', icon_name = "reply", label = 'TLS Requests')
   output$tls_map.value.2   <- renderValueBox_mapvalue(event_data = tls_data, event_type = "tls", value_column = 'tls.sni', opp = 'unique_count' ,icon_name = "question-circle",label = 'TLS Hosts')

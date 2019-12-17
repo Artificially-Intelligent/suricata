@@ -338,6 +338,9 @@ eventData <- function(alrtStream, timeWindow, event_type = '') {
         hidden_columns <- c()
       }
     }
+    if(interactive() && !enable_oauth_dev)
+      hidden_columns <- c()
+    
     if(length(hidden_columns) > 0 && nrow(data_out) > 0)
       data_out[,hidden_columns] <- 'hidden'
     
@@ -347,11 +350,6 @@ eventData <- function(alrtStream, timeWindow, event_type = '') {
     
     
   }, data_row_template)
-}
-
-authenticatedEventData <- function(event_stream, time_window, event_type = ''){
-  eventData(event_stream, time_window, event_type = event_type)
-  
 }
 
 # Count the total nrows of alrtStream
