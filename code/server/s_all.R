@@ -1,6 +1,6 @@
 ### all 
 
-all_data <- alertData(event_stream, max_age_secs)
+all_data <- eventData(event_stream, max_age_secs)
 data$events_all <- all_data
 
 all_request_count <- requestCount(event_stream)

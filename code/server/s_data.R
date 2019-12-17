@@ -9,48 +9,6 @@ data_load_status <- reactiveValues(
   redis_index_last_loaded = 0,
   redis_timestamp_last_loaded = 0
 )
-layered_data_row_template <- data.frame(
-  timestamp = as_datetime(x = integer(0)),
-  timestamp_num = numeric(), 
-  flow_id = character(),
-  in_iface = character(),
-  event_type = character(),
-  src_ip = character(),
-  src_port = numeric(),
-  src_country_name = character(),
-  src_country_code = character(),
-  src_city = character(),
-  src_lat = numeric(),
-  src_long = numeric(),
-  dest_ip = character(),
-  dest_port = numeric(),
-  dest_country_name = character(),
-  dest_country_code = character(),
-  dest_city = character(),
-  dest_lat = numeric(),
-  dest_long = numeric(),
-  proto = character(),
-  host = character(),
-  app_proto = character(),
-  tx_id = character(), 
-  payload = character(),
-  payload_printable = character(),
-  stream = character(),
-  packet = character(),
-  icmp_type = character(),
-  icmp_code = character(),
-alert = character(),
-dhcp = character(),
-drop = character(),
-dns = character(),
-fileinfo = character(),
-flow = character(),
-http = character(),
-netflow = character(),
-packet_info = character(), 
-tcp = character(),
-tls = character()
-)
 data_row_template <- data.frame(
   timestamp = as_datetime(x = integer(0)),
   timestamp_num = numeric(), 
@@ -114,7 +72,7 @@ data_row_template <- data.frame(
   tls.session_resumed = character(),
   tls.ja3 = character(),
   http.hostname = character(),
-  http.http_port = character(),
+  http.http_port = character(), 
   http.url = character(),
   http.http_user_agent = character(),
   http.http_content_type = character(),
@@ -353,7 +311,7 @@ alertStream <- function(session) {
 
 # Accumulates pkgStream rows over time; throws out any older than timeWindow
 # (assuming the presence of a "received" field)
-alertData <- function(alrtStream, timeWindow, event_type = '') {
+eventData <- function(alrtStream, timeWindow, event_type = '') {
   shinySignals::reducePast(alrtStream, function(memo, df,e_type = event_type) {
     if(!is.null(df)){
       # if(nrow(df)  < default_load_size){
@@ -363,17 +321,37 @@ alertData <- function(alrtStream, timeWindow, event_type = '') {
       if(e_type == '')
         e_type <- event_types
       
-      hide_waiter()
-      
-      df %>%
+      data_out <- df %>%
         filter(event_type %in%  e_type ) %>%
         select( names(data_row_template) ) %>%
         rbind(memo) %>%
         filter(timestamp_num > as.numeric(Sys.time()) - timeWindow)
     }else{
-      memo
+      data_out <- memo
     }
+    hidden_columns <- c('dest_ip','src_ip','http.hostname','http.http_port','http.url','http.http_user_agent','dhcp.client_mac','dhcp.assigned_ip','dns.rrname','dns.authorities','dns.answers','dns.grouped.AAAA','dns.grouped.PTR','dns.grouped.CNAME','dns.grouped.A','src_port','dest_port','payload','payload_printable','tls.subject','tls.sni','tls.fingerprint','tls.serial','tls.issuerdn')
+    hidden_columns <- intersect(hidden_columns,names(data_row_template))
+    
+    user_roles <- isolate(u$user_roles)
+    if(! is.null(user_roles)){
+      if( user_roles$name %in% c('Global Admin','Suricata Admin','Suricata User')){
+        hidden_columns <- c()
+      }
+    }
+    if(length(hidden_columns) > 0 && nrow(data_out) > 0)
+      data_out[,hidden_columns] <- 'hidden'
+    
+    hide_waiter()
+    
+    return(data_out)
+    
+    
   }, data_row_template)
+}
+
+authenticatedEventData <- function(event_stream, time_window, event_type = ''){
+  eventData(event_stream, time_window, event_type = event_type)
+  
 }
 
 # Count the total nrows of alrtStream

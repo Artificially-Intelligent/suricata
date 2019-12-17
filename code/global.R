@@ -61,7 +61,7 @@
   
   # Global constants
   
-  enable_oauth_dev = FALSE # Set to FALSE to disable oAuth during development
+  enable_oauth_dev = TRUE # Set to FALSE to disable oAuth during development
   app_directory <- './'
   project_name <- 'Suricata Dashboard'
   

@@ -1,11 +1,36 @@
-### FLOW 
+### EVENTS 
 
-# event_data <- alertData(event_stream, max_age_secs, event_type = "flow")
+
+
+# generate_generic_outputs <- function(event_type = 'flow', event_data = event_data ,event_stream = event_stream, max_age_secs = max_age_secs){
+#  browser()
+#   # Dashboard
 # 
-# flow_request_count <- requestCount(event_stream,event_type='flow')
-# flow_destination_count <- destinationCount(event_stream,event_type='flow')
-# flow_bytes_total <-  totalBytes(event_stream,event_type='flow')
-
+#   output[[paste('output$',event_type,'.rate', sep = '')]] <-  renderValueBox_rate( event_type = event_type, event_data = event_data)
+#   
+#   
+#   output[[paste('output$',event_type,'.destinations', sep = '')]] <- renderValueBox_destinations(event_stream = event_stream, event_type = event_type)
+#    # assign(paste('output$',event_type,'.rate', sep = ''), renderValueBox_rate( event_type = event_type, event_data = event_data))
+#    # assign(paste('output$',event_type,'.destinations', sep = ''), renderValueBox_destinations(event_stream = event_stream, event_type = event_type))
+#    assign(paste('output$',event_type,'.requests', sep = ''), renderValueBox_requests(event_stream = event_stream, event_type = event_type))
+#    assign(paste('output$',event_type,'.bytes', sep = ''), renderValueBox_requests(event_stream = event_stream, event_type = event_type))
+#    assign(paste('output$',event_type,'.report_period', sep = ''), renderText_report_period(event_data = event_data, event_type = event_type))
+#    assign(paste('output$',event_type,'.destination.bubbleplot', sep = ''), renderBubbles_destination(event_data = event_data, event_type = event_type))
+#    assign(paste('output$',event_type,'.destination.table', sep = ''), renderTable_dest_ip(event_data = event_data, event_type = event_type))
+#   
+#   # Table
+#    assign(paste('output$',event_type,'.table', sep = ''), renderDT_table(event_data = event_data, event_type = event_type))
+#    assign(paste('output$',event_type,'.download_csv', sep = ''), downloadHandler_csv(event_data = event_data, event_type = event_type))
+#   
+#   # Map
+#    assign(paste('output$',event_type,'_map_table_detail', sep = ''), renderDT_maptable_detail(event_data = event_data, event_type = event_type))
+#   #  assign(paste('output$',event_type,'_map_leaflet', sep = ''), renderLeaflet_map_destination(event_data = event_data, event_type = event_type, color_column = 'dns.type'))
+#   #  assign(paste('output$',event_type,'_map_table_summary', sep = ''), renderTable_maptable_summary(event_data = event_data, event_type = event_type, value_column = 'dns.type'))
+#   #  assign(paste('output$',event_type,'_map.value.1', sep = ''), renderValueBox_mapvalue_count(event_data = event_data, event_type = event_type, value_column = 'dns.rrname', filter_column = 'dns.type' ,filter_value = 'query', icon_name = "question-circle"))
+#   #  assign(paste('output$',event_type,'_map.value.2', sep = ''), renderValueBox_mapvalue_count(event_data = event_data, event_type = event_type, value_column = 'dns.answers',icon_name = "reply"))
+#   #  assign(paste('output$',event_type,'_map.value.3', sep = ''), renderValueBox_mapvalue_count(event_data = event_data, event_type = event_type, value_column = 'dns.rrname', unique_count =  TRUE,icon_name = "reply"))
+#   #  assign(paste('output$',event_type,'_map.value.4', sep = ''), renderValueBox_mapvalue_count(event_data = event_data, event_type = event_type, value_column = 'dns.answers', unique_count =  TRUE,icon_name = "reply"))
+# }
 
 
 # output$flow.rate <- 
@@ -89,20 +114,23 @@ renderText_report_period <- function(event_data = all_data, event_type = "all"){
 }
 
 # output$flow.destination.bubbleplot <- output$flow.dest_ip.bubbleplot <- 
-renderBubbles_dest_ip <- function(event_data = all_data, event_type = "all"){
+renderBubbles_destination <- function(event_data = all_data, event_type = "all", value_column = 'dest_ip'){
   renderBubbles({
     if (nrow(event_data()) == 0)
       return()
     
-    order <- unique(event_data()$dest_ip)
-    df <- flow_data() %>%
-      group_by(dest_ip) %>%
-      tally() %>%
-      arrange(desc(n), tolower(dest_ip)) %>%
-      # Just show the top 60, otherwise it gets hard to see
-      head(40)
+    df <- event_data()
+    df$value_column <- df[,value_column]
+    order <- unique(df$value_column)
     
-    bubbles(df$n, df$dest_ip, key = df$dest_ip)
+    df <- df %>%
+      group_by(value_column) %>%
+      tally() %>%
+      arrange(desc(n), tolower(value_column)) %>%
+      # Just show the top 30, otherwise it gets hard to see
+      head(30)
+    
+    bubbles(df$n, df$value_column, key = df$value_column)
   })
 }
 
@@ -113,7 +141,7 @@ renderTable_dest_ip <- function(event_data = all_data, event_type = "all"){
       group_by(dest_ip) %>%
       tally() %>%
       arrange(desc(n), tolower(dest_ip)) %>%
-      mutate(percentage = n / nrow(flow_data()) * 100) %>%
+      mutate(percentage = n / nrow(event_data()) * 100) %>%
       select("Destination IP" = dest_ip, "% of requests" = percentage) %>%
       as.data.frame() %>%
       head(15)
@@ -346,79 +374,148 @@ leaflet_mapdata <- function(event_data = all_data, event_type = "all"){
 #   
 # }
 
-renderValueBox_mapvalue_count <- function(event_data = all_data, event_type = "all", value_column = 'event_type', value = '', filter_column = '', filter_value = '', unique_count = FALSE, icon_name = "chart-line"){
+renderValueBox_mapvalue <- function(event_data = all_data, event_type = "all", value_column = 'event_type', value = '', filter_column = '', filter_value = '', icon_name = "chart-line", opp = 'count', label = NULL){
   renderValueBox({
-    actual_value_column <- value_column
-    label <- value_column
+    auto_label <- value_column
     if(nchar(value) > 0)
-      label <- paste(value,label)
-    if(unique_count)
-      label <- paste("unique",label)
-
+      auto_label <- paste(value,auto_label)
+    
+    auto_label <- paste(opp,auto_label)
+    
     dt <- leaflet_mapdata(event_data = event_data, event_type = event_type)
     
     #dt <- Filter(Negate(is.null), dt[,c(value_column,filter_column)])
     
-    if(nrow(dt) == 0){
-      row_count <- 0
+    if(nrow(dt) == 0 || ! opp %in% c('count','unique_count','sum','max','min','mean','median') ){
+      result <- 0
+      if( ! opp %in% c('count','unique_count','sum','max','min','avg'))
+        result <- 'invalid opp selected'
     }else{
       if(nchar(filter_column) > 0 && nchar(filter_value) > 0){
-        dt <-  dt[,c(value_column,filter_column)]
-        if(nrow(dt)>0)
-          dt <- dt[dt[filter_column] == filter_value,] %>%
-            remove_empty(which = c("rows", "cols")) 
-        dt$value_count <- 1
-      }else{
-        dt <-  dt[,c(value_column,'flow_id')]
-        dt$flow_id <- NA
-        if(typeof(dt[,value_column]) == 'list'){
-           # browser()
-          dt <- dt[unlist(lapply(dt[,value_column], (function(x) { !is.null(x)}))),]
-          dt$value_count <- unlist(lapply(dt[,value_column], (function(x) { if(!is.null(x)){nrow(x)}else{0}})))
-          
-          if(nrow(dt) > 0 && typeof(dt[,value_column]) == 'list')
-            if(length(names(dt[,value_column][[1]])) > 0)
-              actual_value_column <- names(dt[,value_column][[1]])[1]
-        }else{
-          dt <-  dt %>%
-            remove_empty(which = c("rows"))
-          dt$value_count <- 1
-        }
-        dt$flow_id <- NULL
-        if(nrow(dt) > 0)
-          colnames(dt) <- c(actual_value_column,"value_count")  
+          dt <- dt[dt[filter_column] == filter_value,]
       }
-      
-      
-      
       if(nchar(value) > 0)
-        dt <- dt[dt[,actual_value_column] == value,]
+        dt <- dt[dt[,value_column] == value,]
+      
+      value_Vector <- dt[,value_column]
+      
+      actual_value_column <- value_column
+      
+      if(typeof(value_Vector)== 'list'){
+        value_Vector <- value_Vector[unlist(lapply(value_Vector, (function(x) { !is.null(x)})))]
+        # value_Vector <- Filter(Negate(is.null), value_Vector)
+        
+        if(! is.null(names(value_Vector[[1]])))
+          actual_value_column <- names(value_Vector[[1]])[1]
+        
+        value_Vector <- unlist(lapply(value_Vector, (function(x) { if(!is.null(x)){(x[1])}else{0}})))
+        
+      }
       
       if(value_column != actual_value_column)
-        label <- paste(label,actual_value_column,sep='.')
+        auto_label <- paste(auto_label,actual_value_column,sep='.')
       
-      if(unique_count){
-        row_count <- length(unique(dt[,actual_value_column]))
-      }else{
-        if(nrow(dt)==0){
-          row_count <- 0
-        }else{
-          row_count <- sum(dt[,"value_count"])
-        }
-      }
+      result <- switch(opp,
+             'count' = length(value_Vector),
+             'unique_count' = length(unique(value_Vector)),
+             'sum' = sum(as.numeric(value_Vector)),
+             'max' = max(as.numeric(value_Vector)),
+             'min' = min(as.numeric(value_Vector)),
+             'median' = median(as.numeric(value_Vector)),
+             'mean' = mean(as.numeric(value_Vector))
+      )
+      if(is.null(label))
+        label <- auto_label
     }
     
     if(nchar(filter_column) > 0 && nchar(filter_value) > 0)
-      label <- paste(label, filter_value)
+      auto_label <- paste(auto_label, filter_value)
     
     valueBox(
-      row_count,
+      format(result, digits=5) ,
       label,
       icon = icon(icon_name)
     )
   })
   
 }
+
+
+
+
+# renderValueBox_mapvalue_count <- function(event_data = all_data, event_type = "all", value_column = 'event_type', value = '', filter_column = '', filter_value = '', unique_count = FALSE, icon_name = "chart-line"){
+#   renderValueBox({
+#     actual_value_column <- value_column
+#     label <- value_column
+#     if(nchar(value) > 0)
+#       label <- paste(value,label)
+#     if(unique_count)
+#       label <- paste("unique",label)
+# 
+#     dt <- leaflet_mapdata(event_data = event_data, event_type = event_type)
+#     
+#     #dt <- Filter(Negate(is.null), dt[,c(value_column,filter_column)])
+#     
+#     if(nrow(dt) == 0){
+#       row_count <- 0
+#     }else{
+#       if(nchar(filter_column) > 0 && nchar(filter_value) > 0){
+#         dt <-  dt[,c(value_column,filter_column)]
+#         if(nrow(dt)>0)
+#           dt <- dt[dt[filter_column] == filter_value,] %>%
+#             remove_empty(which = c("rows", "cols")) 
+#         dt$value_count <- 1
+#       }else{
+#         dt <-  dt[,c(value_column,'flow_id')]
+#         dt$flow_id <- NA
+#         if(typeof(dt[,value_column]) == 'list'){
+#            # browser()
+#           dt <- dt[unlist(lapply(dt[,value_column], (function(x) { !is.null(x)}))),]
+#           dt$value_count <- unlist(lapply(dt[,value_column], (function(x) { if(!is.null(x)){nrow(x)}else{0}})))
+#           
+#           if(nrow(dt) > 0 && typeof(dt[,value_column]) == 'list')
+#             if(length(names(dt[,value_column][[1]])) > 0)
+#               actual_value_column <- names(dt[,value_column][[1]])[1]
+#         }else{
+#           dt <-  dt %>%
+#             remove_empty(which = c("rows"))
+#           dt$value_count <- 1
+#         }
+#         dt$flow_id <- NULL
+#         if(nrow(dt) > 0)
+#           colnames(dt) <- c(actual_value_column,"value_count")  
+#       }
+#       
+#       
+#       
+#       if(nchar(value) > 0)
+#         dt <- dt[dt[,actual_value_column] == value,]
+#       
+#       if(value_column != actual_value_column)
+#         label <- paste(label,actual_value_column,sep='.')
+#       
+#       if(unique_count){
+#         row_count <- length(unique(dt[,actual_value_column]))
+#       }else{
+#         if(nrow(dt)==0){
+#           row_count <- 0
+#         }else{
+#           row_count <- sum(dt[,"value_count"])
+#         }
+#       }
+#     }
+#     
+#     if(nchar(filter_column) > 0 && nchar(filter_value) > 0)
+#       label <- paste(label, filter_value)
+#     
+#     valueBox(
+#       row_count,
+#       label,
+#       icon = icon(icon_name)
+#     )
+#   })
+#   
+# }
 
 renderTable_maptable_summary <- function(event_data = all_data, event_type = "all", value_column = 'event_type'){
   renderTable({

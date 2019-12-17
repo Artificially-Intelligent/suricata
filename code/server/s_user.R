@@ -1,11 +1,20 @@
+u <- reactiveValues(
+  # User settings accessible to s_data functions
+  user_id =  NULL,
+  user_roles = NULL
+)
+
 output$user <- renderUser({
   if(length(session$userData$auth0_info)>0){
+    user_roles <- auth0_user_roles(user_id = session$userData$auth0_info$sub)
+    u$user_id  <- session$userData$auth0_info$sub
+    u$user_roles <- user_roles
+    
     dashboardUser(
       name = session$userData$auth0_info$name, 
       src = session$userData$auth0_info$picture, 
       title = "User",
-      user_roles <- auth0_user_roles(user_id = session$userData$auth0_info$sub), 
-      subtitle = paste("Roles:", auth0_user_roles(user_id = session$userData$auth0_info$sub)$name ,collapse = ", "), 
+      subtitle = paste("Roles:", paste(user_roles$name ,collapse = ", ")), 
       footer = p("The footer", class = "text-center"),
       fluidRow(
         
