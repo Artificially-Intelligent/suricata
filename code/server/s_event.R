@@ -39,13 +39,20 @@ renderValueBox_rate <- function(event_data = all_data, event_type = "all"){
     # The downloadRate is the number of rows in flow_data since
     # either first_timestamp or max_age_secs ago, whichever is later.
     elapsed <- as.numeric(Sys.time()) - first_timestamp()
-    download_rate <- nrow(event_data()) / min(max_age_secs, elapsed)
+    interval <- min(max_age_secs, elapsed)
+    download_rate <- nrow(event_data()) / interval
     
-    print(paste("first timestamp:",first_timestamp(),"elapsed:",min(max_age_secs, elapsed)))
+     if(interval < 120){
+       label <- paste( event_type , "request per sec (last",interval, "sec)")
+     }else{
+       label <- paste( event_type , "request per sec (last",round(interval/60,1), "min)")
+     }
+    
+    print(paste("first timestamp:",first_timestamp(),"elapsed:",interval))
     
     valueBox(
       value = formatC(download_rate, digits = 1, format = "f"),
-      subtitle = paste( event_type , "request per sec (last",max_age_minutes, "min)"),
+      subtitle = label,
       icon = icon("area-chart")
       # ,
       # color = if (download_rate >= input$rateThreshold) "yellow" else "aqua"
@@ -82,8 +89,9 @@ renderValueBox_requests <- function(event_stream = event_stream, event_type = "a
   bytes_total <-  totalBytes(event_stream,event_type)
   renderValueBox({
     valueBox(
-      round(bytes_total()/(1024*1024),1),
-      paste("Total",event_type , "Volume (MB)"),
+      # round(bytes_total()/(1024*1024),1),
+      comprss(bytes_total()),
+      paste("Total",event_type , "Volume (Bytes)"),
       icon = icon("window-restore")
     )
   })
@@ -175,7 +183,7 @@ renderPrint_raw <- function(event_data = all_data, event_type = "all"){
 # output$flow.table <- 
 renderDT_table <- function(event_data = all_data, event_type = "all"){
   renderDT({
-    updateSliderTextInput(session,"data_refresh_rate",selected = 120) 
+    # updateSliderTextInput(session,"data_refresh_rate",selected = 120) 
     
       event_data() %>% 
       mutate(timestamp = as_datetime(timestamp, tz = Sys.timezone(location = TRUE))
@@ -298,24 +306,49 @@ renderPlotly_app_proto_server_averaged_bytes.barplot <- function(event_data = al
   })
 }
 
+### Maps
 
-# output$http_map_leaflet <- 
-renderLeaflet_map_destination <- function(event_data = all_data, event_type = "all", color_column = 'event_type'){
+observeEvent_map_button <- function(event_type = "all", leafletId = "_map_leaflet", buttonId = "_zoom_all_button"){
+  leafletId <- paste( event_type, leafletId,sep="")
+  button_inputId <- paste( "input$",leafletId, buttonId,sep="")
+  
+  observeEvent(eval(parse(text = button_inputId)), {
+    lat <- 0
+    lng <- 0
+    my_zoom <- 1
+    leafletProxy(leafletId) %>%
+      flyTo(lng, lat, zoom = my_zoom)
+  })
+}
+renderLeaflet_map_destination <- function(event_data = all_data, event_type = "all", color_column = 'event_type',group_by_src = FALSE){
   renderLeaflet({
     #user_settings <- user_settings()
-    df <- mapData(event_data(),event_type = event_type, color_column = color_column)
+    df <- mapData(event_data(),event_type = event_type, color_column = color_column,group_by_src = group_by_src)
     
-    if(! is.null(df)){
-      lat_bounds <- c(max(c(df$lat)), min(c(df$lat)))
-      lng_bounds <- c(max(c(df$long)), min(c(df$long)))
-      
+    if(is.numeric(df$color_column)){
+      pal <- colorNumeric(
+        palette = "YlGnBu",
+        domain = df$color_column
+      )
+    }else{
+      pal <- colorFactor(
+        palette = "YlGnBu",
+        domain = as.factor(df$color_column)
+      )
+    }
+    
+    df_lat <- df[!is.na( df$lat ), c('lat')]
+    df_long <- df[! is.na( df$long ), c('long')]
+    
+    if(! is.null(df) && nrow(df_lat) > 0 && nrow(df_long) > 0){
+      lat_bounds <- c(max(df_lat$lat), min(df_lat$lat))
+      lng_bounds <- c(max(df_long$long), min(df_long$long))
       # if only one map item
-      if(lat_bounds[1]-lat_bounds[2] == 0 || lng_bounds[1]-lng_bounds[2] == 0 ){
+      if(max(df_lat$lat) == min(df_lat$lat) || max(df_lat$long) == min(df_lat$long) ){
         print( 'only one map entry, expanding map bounds')
         lat_bounds <- lat_bounds + c(1,-1)
         lng_bounds <- lng_bounds + c(1,-1)
       }
-      # browser()
       
       current_map_bounds_var <- paste('input$', event_type,'_map_leaflet_bounds',sep='')
       bounds <- isolate(eval(parse(text = current_map_bounds_var)))
@@ -323,13 +356,29 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
         lat_bounds <- c(bounds$north,bounds$south)
         lng_bounds <- c(bounds$east,bounds$west)
       }
+      
       m <- leaflet() %>%
+        # addTiles() %>%
+        # addLayersControl(
+        #   baseGroups = c("Hide overlays", "Agriculture Employee Ratio", "Mining Employee Ratio"),
+        #   options = layersControlOptions(collapsed = TRUE)
+        # ) %>%
         addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+        # addPolylines(
+        #   group = paste(event_type,"map_line", sep = '.'),
+        #   lat = ~lat_vector,
+        #   lng = ~long_vector,
+        #   color = ~pal(gdp_md_est),
+        #   fillColor = color,
+        #   stroke = TRUE, 
+        #   smoothFactor = 1, 
+        #   fillOpacity = 0.2
+        # ) %>%
         addMapPane("top_circles", zIndex = 430) %>%
         
         #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
         fitBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2]) %>%
-        addCircles_f(df) 
+         addCircles_f(df) 
       
       m
     }else{
@@ -399,8 +448,9 @@ renderValueBox_mapvalue <- function(event_data = all_data, event_type = "all", v
         value_Vector <- value_Vector[unlist(lapply(value_Vector, (function(x) { !is.null(x)})))]
         # value_Vector <- Filter(Negate(is.null), value_Vector)
         
-        if(! is.null(names(value_Vector[[1]])))
-          actual_value_column <- names(value_Vector[[1]])[1]
+        if(length(value_Vector) > 0)
+          if(! is.null(names(value_Vector[[1]])))
+            actual_value_column <- names(value_Vector[[1]])[1]
         
         value_Vector <- unlist(lapply(value_Vector, (function(x) { if(!is.null(x)){(x[1])}else{0}})))
         
@@ -417,7 +467,10 @@ renderValueBox_mapvalue <- function(event_data = all_data, event_type = "all", v
              'min' = min(as.numeric(value_Vector)),
              'median' = median(as.numeric(value_Vector)),
              'mean' = mean(as.numeric(value_Vector))
-      )
+      ) %>% 
+        comprss()
+      
+      
       if(is.null(label))
         label <- auto_label
     }

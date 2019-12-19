@@ -14,6 +14,8 @@
   library(tidyjson)
   library(hrbrthemes)
   library(jsonlite)
+  library(googlePolylines)
+  
   
   library(bubbles)        # remotes::install_github("jcheng5/bubbles")
   library(shinySignals)   # remotes::install_github("hadley/shinySignals")
@@ -65,10 +67,12 @@
   app_directory <- './'
   project_name <- 'Suricata Events GUI'
   
-  max_history_load_size <- 20000
-  initial_history_load_size <- 100
-  default_load_size <- 5000
+  max_load_size <- 20000
+  initial_history_load_size <- 100000
+  default_load_size <- 10000
   
+  
+  history_folder <- file.path('..','data',redis_key)
   
   #filter data out if older than max_age_minutes
   max_age_minutes <- 60 * 1

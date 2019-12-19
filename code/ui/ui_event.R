@@ -112,6 +112,7 @@ tabItem_table <- function(event = "all") {
 tabItem_map <- function(event = "all") {
   tab_name <- paste(event,"_map",sep="")
   leaflet_outputId <- paste(tab_name, "_leaflet",sep="")
+  zoom_all_button_inputId = paste(leaflet_outputId, "_zoom_all_button",sep="")
   table_summary_outputId <- paste(tab_name,"_table_summary",sep="")
   DT_detail_outputId <- paste(tab_name,"_table_detail",sep="")
   
@@ -138,6 +139,15 @@ tabItem_map <- function(event = "all") {
           fluidRow(
             column(width = 6,
                    h2(icon("globe-asia"), HTML("&nbsp;"),tab_title)
+            ),
+            column(width = 3,offset = 3,
+                   actionBttn(
+                                inputId = zoom_all_button_inputId,
+                                label = "Zoom All Data",
+                                style = "gradient",
+                                color = "primary",
+                                icon = icon("search-location")
+                              )
             )
           )
           # ,box(

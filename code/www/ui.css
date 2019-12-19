@@ -38,3 +38,6 @@
   background-color: grey;
   background-color: rgba(0, 151, 230,1.0);
 }
+.loading-text {
+  color: white;
+}
