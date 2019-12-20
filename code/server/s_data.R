@@ -11,12 +11,12 @@ data_load_status <- reactiveValues(
 )
 
 alertStream <- function(session) {
-  
+  redis_conn <- safe_redis(host = redis_host, 'redis_conn') 
   # Returns new lines
   newLines <- reactive({
     
     # Check if redis server can be connected
-    if (!redux::redis_available(host = redis_host)){
+    if (is.null(safe_redis(host = redis_host))){
       retry_seconds <- 5
       print(paste("Redist db on host'",redis_host,"'is unavailable, retrying connection in", retry_seconds, "seconds" ))
       invalidateLater(1000 * retry_seconds, session)

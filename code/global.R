@@ -15,6 +15,8 @@
   library(hrbrthemes)
   library(jsonlite)
   library(googlePolylines)
+  library(RMySQL)
+  library(pool)
   
   
   library(bubbles)        # remotes::install_github("jcheng5/bubbles")
@@ -71,9 +73,6 @@
   initial_history_load_size <- 100000
   default_load_size <- 10000
   
-  
-  history_folder <- file.path('..','data',redis_key)
-  
   #filter data out if older than max_age_minutes
   max_age_minutes <- 60 * 1
   
@@ -106,6 +105,11 @@
   redis_host <- if(nchar(Sys.getenv("REDIS_HOST"))> 0){ Sys.getenv("REDIS_HOST")}else{ 'localhost' }
   redis_key  <- if(nchar(Sys.getenv("REDIS_KEY"))> 0){ Sys.getenv("REDIS_KEY")}else{ 'suricata' }
   
+  history_folder <- file.path('..','data',redis_key)
+  
+  mysql_db <- list(host = 'unraiden.local', dbname = 'suricata', user = 'suricata', password = '7tZv2Q4r%')
+  
+ 
   
   # Make sure to source function and ui files here or they won't be used by the app
   # Source server files within server.R 
@@ -116,6 +120,7 @@
   source('functions/fun_io.R')
   source('functions/fun_plots.R')
   source('functions/fun_sql.R')
+  source('functions/fun_redis.R')
   source('functions/fun_auth0.R')
   
   source('ui/ui_event.R')
@@ -125,4 +130,5 @@
   # source('ui/ui_netflow.R')
   # source('ui/ui_alert.R')
   print(paste("global.R finished"))
+  
   
