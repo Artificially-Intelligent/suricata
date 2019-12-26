@@ -351,3 +351,184 @@ mapData <- function(alrtData, event_type = '' , color_column  = 'event_type',gro
     df_grouped
   )
 }
+
+
+mapData_sql <- function(alrtData, event_type = '' , color_column  = 'event_type',group_by_src = FALSE) {
+  
+  if(event_type == ''){
+    event_type <- event_types
+  }
+  e_type <- event_type
+  
+  db_pool <- safe_pool()
+  events_db <- tbl(db_pool, "lnd_events")
+  totals <- events_db %>%
+    filter(event_type %in% e_type) %>%
+    summarise(requests = n() , 
+              http_bytes = sum( http.length, na.rm=T ),
+              netflow_bytes = sum(netflow.bytes, na.rm=T ),
+              flow_toclient_bytes = sum(flow.bytes_toclient, na.rm=T ),
+              flow_toserver_bytes = sum(flow.bytes_toserver, na.rm=T )
+    )
+  
+  group_by_src = FALSE
+  if(group_by_src){
+    events_mutated <-  events_db %>%
+      filter(event_type %in% e_type) %>%
+      # group_by(src_city, src_country_code, src_country_name  
+      #          ,src_lat,src_long 
+      #          # ,polyline
+      #          ,color_column
+      # ) %>%
+      mutate(country_name = src_country_name, country_code = src_country_code, city = src_city
+             , long = src_long,lat = src_lat
+             ,ip = src_ip
+              # ,polyline = encodeCoordinates(c(src_long, dest_long),c(src_lat, dest_lat))
+            )
+  }else{
+    events_mutated <-  events_db %>% 
+      filter(event_type %in% e_type) %>%
+      # group_by(dest_city, dest_country_code, dest_country_name  
+      #          ,dest_lat,dest_long 
+      #          # ,polyline
+      #          ,color_column
+      # ) %>%
+      mutate(country_name = dest_country_name, country_code = dest_country_code, city = dest_city 
+             ,long = dest_long,lat = dest_lat
+             ,ip = dest_ip
+             # ,polyline = encodeCoordinates(c(src_long, dest_long),c(src_lat, dest_lat))
+             # ,color_column = eval(parse(text = color_column)) 
+      )
+  }
+  
+  df_grouped <- events_mutated %>%
+    group_by(city, country_code, country_name
+             ,lat,long
+             ,color_column
+     ) %>%
+    summarise(
+      ip = str_flatten(distinct(ip),collapse =',\n')
+      , event_type = str_flatten(distinct(event_type),collapse =',\n')
+      , app_proto = str_flatten(distinct(app_proto),collapse =',\n')
+      , requests = n()
+      , flow.alerted = str_flatten(distinct(flow.alerted),collapse =',\n')
+      , flow.bytes_toclient = sum(flow.bytes_toclient, na.rm=T )
+      , flow.bytes_toserver = sum(flow.bytes_toserver, na.rm=T )
+      , flow.pkts_toclient = sum(flow.pkts_toclient, na.rm=T )
+      , flow.pkts_toserver = sum(flow.pkts_toserver, na.rm=T )
+      , netflow.bytes = sum(netflow.bytes)
+      , netflow.pkts = sum(netflow.pkts)
+      , http.hostname = str_flatten(distinct(http.hostname),collapse =',\n')
+      , http.server = str_flatten(distinct(http.server),collapse =', ')
+      , http.http_method = str_flatten(distinct( http.http_method),collapse =', ')
+      , http.length = sum(http.length)
+      , dns.rrname = str_flatten(distinct(dns.rrname),collapse =',\n')
+      , dns.type = str_flatten(distinct(dns.type),collapse =', ')
+      , alert.category = str_flatten(distinct(alert.category),collapse =',\n')
+      , alert.action = str_flatten(distinct(alert.action),collapse =', ') 
+      , alert.signature = str_flatten(distinct(alert.signature),collapse =', ')
+      , alert.severity = str_flatten(distinct(alert.severity),collapse =', ')
+    ) 
+    
+  df_formatted <- df_grouped %>%
+    mutate( popup_html = paste( 
+      '<div class="alert_details_name"><h4>', city, " (", country_code , ')<h4></div>'
+      ,'<div class="alert_details">IP Address(s)', ip, '</div>'
+      ,'<div class="alert_details">Event Type(s):', event_type, '</div>'
+      ,'<div class="alert_details">Traffic Type(s):',  app_proto, '</div>'
+      ,'<div class="alert_details">Requests:', n(), '</div>'
+      , sep = ' ')
+    )
+  if('flow' %in% e_type)
+    df_formatted <- df_formatted %>%
+      select(popup_html = paste( popup_html,
+        '<div class="alert_details">Alert Triggered:', flow.alerted , '</div>'
+        ,'<div class="alert_details">Bytes to Client:', flow.bytes_toclient, '</div>'
+        ,'<div class="alert_details">Bytes to Server:', flow.bytes_toserver, '</div>'
+        ,'<div class="alert_details">Packets to Client:', flow.pkts_toclient, '</div>'
+        ,'<div class="alert_details">Packets to Server:', flow.pkts_toclient, '</div>'
+        , sep = ' ')
+      )
+  if('netflow' %in% e_type)
+    df_formatted <- df_formatted %>%
+    select(popup_html = paste( popup_html,
+        '<div class="alert_details">Bytes:', netflow.bytes, '</div>'
+        ,'<div class="alert_details">Packets:', netflow.pkts, '</div>'
+        , sep = ' '))
+  
+  if('http' %in% e_type)
+    df_formatted <- df_formatted %>%
+    select(popup_html = paste( popup_html,
+        '<div class="alert_details">HTTP Hostname(s):', http.hostname, '</div>'
+        ,'<div class="alert_details">HTTP Server(s):',  http.server, '</div>'
+        ,'<div class="alert_details">HTTP Method(s):',   http.http_method, '</div>'
+        ,'<div class="alert_details">HTTP Bytes:', http.length, '</div>'
+        , sep = ' '))
+  
+  if('dns' %in% e_type)
+    df_formatted <- df_formatted %>%
+    select(popup_html = paste( popup_html,
+        '<div class="alert_details">DNS Resource Record(s):', dns.rrname, '</div>'
+        ,'<div class="alert_details">DNS Message Type(s):',  dns.type, '</div>'
+        , sep = ' '))
+  
+  if('alert' %in% e_type)
+    df_formatted <- df_formatted %>%
+    select(popup_html = paste( popup_html
+        ,'<div class="alert_details">Alert Category(s):', alert.category, '</div>'
+        ,'<div class="alert_details">Alert Action(s):',  alert.action, '</div>'
+        ,'<div class="alert_details">Alert Signature(s):',  alert.signature, '</div>'
+        ,'<div class="alert_details">Alert Severity(s):',  alert.severity, '</div>'
+        , sep = ' ')
+    )
+  df_formatted <- df_formatted %>%
+    select(popup_html = paste( popup_html , '</div>'))
+  
+  df_mapdata <- df_formatted  %>%
+    select(bytes =  if((flow.bytes_toclient + flow.bytes_toserver) > 0){(flow.bytes_toclient + flow.bytes_toserver)} else{
+      if((netflow.bytes) > 0){(netflow.bytes)} else{
+        if((http.length) > 0){(http.length)} else{
+          0 
+        }  
+      }
+    }
+    )
+  #     http.length ,
+  #               (flow.bytes_toclient + flow.bytes_toserver),
+  #               sum(netflow.bytes, na.rm=T )),
+  # packets = max(sum(flow.pkts_toclient, na.rm=T ) + sum(flow.pkts_toserver, na.rm=T ),
+  #               sum(netflow.pkts, na.rm=T )),
+  # ) %>%
+  # mutate(total_bytes_pct = round(bytes/total_bytes,2)
+  #        ,radius = round(4 + ( round(requests/total_requests, 2)) * 16)
+  #        
+
+  # df_grouped %>%
+  #   mutate(total_bytes_pct = round(bytes/total_bytes,2)
+  #          ,radius = round(4 + ( round(requests/total_requests, 2)) * 16)
+  #          # ,radius = round(4 + ( round(bytes/total_bytes, 2)) * 16)
+  #   )
+  
+  # color_factor <- as.factor( df[,color_column] )
+  # 
+  # if(is.null(df[color_column]) 
+  #    # || nlevels(color_factor) < 2
+  # ){
+  #   print('defaulting color_column to event_type')
+  #   color_column <- 'event_type'
+  # }
+  # 
+  # color_factor <- as.factor( df[,color_column] )
+  # color_set <- data.frame(levels(color_factor),levels(color_factor),
+  #                         color = I(brewer.pal(nlevels(color_factor), name = 'Dark2')[1:nlevels(color_factor)]))
+  # names(color_set) <- c(color_column,'color_column','color')
+
+  show_query(df_formatted)
+  
+  qry_start <- Sys.time()
+  df_formatted
+  Sys.time() - qry_start
+  return(
+    show_query(df_grouped)
+  )
+}

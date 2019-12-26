@@ -17,6 +17,7 @@
   library(googlePolylines)
   library(RMySQL)
   library(pool)
+  library(stringr)
   
   
   library(bubbles)        # remotes::install_github("jcheng5/bubbles")
@@ -76,7 +77,9 @@
   #filter data out if older than max_age_minutes
   max_age_minutes <- 60 * 1
   
-  iplookup_db_file <- '../data/IP2LOCATION-LITE-DB9.BIN'
+  iplookup_db_file <- '../data/ip2proxy/IP2LOCATION-LITE-DB9.BIN'
+  iplookup_db_csv = '../data/ip2proxy/IP2PROXY-IP-PROXYTYPE-COUNTRY-REGION-CITY-ISP.CSV'
+    
   tmp_json_file <- '../data/tmp.json'
   event_types <- c('alert',
               'drop',

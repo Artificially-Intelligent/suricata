@@ -1,16 +1,15 @@
 # Functions including SQL scripts
 
 ## returns either a valid connection or NULL for failure
-safe_redis <- function(host = redis_host, global_redis_conn_name = 'redis_conn') {
-  r_var <- global_redis_conn_name
+safe_redis <- function(host = redis_host) {
   vaild_connection <- FALSE
-  eval(parse(text = r_var))
+  
   if (!redux::redis_available(host = host))
-    eval(parse(text = r_var)) <- NULL
+    redis_conn <- NULL
 
-  if(exists(r_var)){
+  if(exists('redis_conn')){
     tryCatch({
-      eval(parse(text = r_var))$PING()
+      redis_conn$PING()
       vaild_connection <- TRUE
       },
       error = function(c) {
@@ -23,10 +22,11 @@ safe_redis <- function(host = redis_host, global_redis_conn_name = 'redis_conn')
   
   if(! vaild_connection ){
     print(paste(Sys.time() ,'Creating new connection to Redist host:',host ))
-    eval(parse(text = r_var)) <- NULL
+    redis_conn <- NULL
     tryCatch({
-      eval(parse(text = r_var)) <- redux::hiredis(host = host)
-      eval(parse(text = r_var))$PING()
+      redis_conn <- redux::hiredis(host = host)
+      redis_conn$PING()
+      vaild_connection <- TRUE
     },
       error = function(c) {
         new_entries <- 0
@@ -36,8 +36,94 @@ safe_redis <- function(host = redis_host, global_redis_conn_name = 'redis_conn')
     )
     
   }
-  return(eval(parse(text = r_var)))
+  if(vaild_connection){
+    return(redis_conn)
+  }else{
+    return(NULL)
+  }
 }
+
+
+get_redis_json <- function(host = redis_host, 
+                           key = redis_key, 
+                           index_last_loaded = 0, 
+                           timestamp_last_loaded = 0){
+  
+  # Check if redis server connection exists, create if not
+  redis_conn <- safe_redis(host)
+  
+  index_last_loaded <- as.integer(index_last_loaded)
+  index_end <- as.integer(redis_conn$LLEN(key=key))
+  
+  print(paste(Sys.time() ,"last load index_end:", index_last_loaded, "current index_end:",index_end ))
+  
+  index_load_start <- index_last_loaded
+  index_load_end <- index_end
+  if(index_last_loaded == 0){
+    index_load_start <- as.integer(index_end - min(initial_history_load_size,index_end))
+    index_load_end <- as.integer(min(initial_history_load_size,index_end,max_load_size))
+  }else{
+    if(index_last_loaded > index_end){
+      index_load_start <- 0
+      index_load_end <- as.integer(min(index_end,max_load_size))
+    }else{
+      # if((index_end - index_last_loaded) > max_load_size)
+      # index_load_start <- index_end -  max_load_size
+      index_load_start <- index_last_loaded + 1
+      index_load_end <- as.integer(index_last_loaded + min(index_end - index_last_loaded, max_load_size))
+    }
+  }
+  
+  print(paste(Sys.time() ,"load index_start:", index_load_start, "load index_end:", index_load_end,  "current index_end:",index_end ))
+  
+  new_json <- NULL
+  
+  if (redux::redis_available(host = host) ||  index_end > 0 || new_entries > 0){
+    tryCatch(
+      {
+        {
+          new_json <- redis_conn$LRANGE(key=key,as.integer(index_load_start),as.integer(index_load_end)) 
+          
+          index_last_loaded <- index_load_end
+
+        }
+      },
+      error = function(c) {
+        new_entries <- 0
+        msg <- conditionMessage(c)
+        message(c)
+        invisible(structure(msg, class = "try-error"))
+      }
+    )
+  }
+  
+  if(! is.null(new_json) && length(new_json) > 0){
+    
+    min_timestamp <- (
+      fromJSON((new_json[1][[1]]))$timestamp %>%
+        as_datetime()
+    )
+    
+    if(is.double(min_timestamp))
+      timestamp_first_loaded <- min_timestamp
+    
+    max_timestamp <- (
+      fromJSON((new_json[length(new_json)])[[1]])$timestamp %>%
+        as_datetime()
+    )
+    
+    if(is.double(max_timestamp))
+      timestamp_last_loaded <- max_timestamp
+    
+    print(paste(Sys.time() ,"new_lines:",length(new_json), "timestamp_last_loaded:", timestamp_last_loaded))
+  }else{
+    print(paste(Sys.time() ,"no new_lines,", "timestamp_last_loaded:", timestamp_last_loaded))
+  }
+  
+  list(new_json = new_json, index_last_loaded = as.integer(index_last_loaded), index_end = as.integer(index_end)
+       , timestamp_first_loaded = timestamp_first_loaded, timestamp_last_loaded = timestamp_last_loaded)
+}
+
 
 get_redis_list <- function(host = redis_host, 
                            key = redis_key, 
