@@ -4,8 +4,10 @@
 safe_redis <- function(host = redis_host) {
   vaild_connection <- FALSE
   
-  if (!redux::redis_available(host = host))
+  if (!redux::redis_available(host = host)){
+    print(paste(Sys.time() ,'Error- Unavailable redist host:',host ))
     redis_conn <- NULL
+  }
 
   if(exists('redis_conn')){
     tryCatch({
