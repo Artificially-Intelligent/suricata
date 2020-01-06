@@ -71,7 +71,7 @@
   project_name <- 'Suricata Events GUI'
   
   max_load_size <- 20000
-  initial_history_load_size <- 100000
+  initial_history_load_size <- 10000
   default_load_size <- 10000
   
   #filter data out if older than max_age_minutes

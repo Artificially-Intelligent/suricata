@@ -10,10 +10,11 @@ all_bytes_total <-  totalBytes(event_stream)
 output$all.rate <- renderValueBox({
   # The downloadRate is the number of rows in all_data since
   # either first_timestamp or max_age_secs ago, whichever is later.
-  elapsed <- (data$events_all() %>%
-    summarise('report_period' = max(timestamp_num) - min(timestamp_num)))[[1]]
+  
+  # elapsed <- (data$events_all() %>%
+  #   summarise('report_period' = max(timestamp_num) - min(timestamp_num)))[[1]]
     
-  as.numeric(Sys.time()) - first_timestamp()
+  elapsed <- Sys.time() - first_timestamp()
   download_rate <- nrow(data$events_all() ) / min(max_age_secs, elapsed)
   
   valueBox(

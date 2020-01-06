@@ -38,7 +38,7 @@ renderValueBox_rate <- function(event_data = all_data, event_type = "all"){
   renderValueBox({
     # The downloadRate is the number of rows in flow_data since
     # either first_timestamp or max_age_secs ago, whichever is later.
-    elapsed <- as.numeric(Sys.time()) - first_timestamp()
+    elapsed <- Sys.time() - first_timestamp()
     interval <- min(max_age_secs, elapsed)
     download_rate <- nrow(event_data()) / interval
     

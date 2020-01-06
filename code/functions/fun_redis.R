@@ -144,7 +144,7 @@ get_redis_list <- function(host = redis_host,
   index_load_end <- index_end
   if(index_last_loaded == 0){
     index_load_start <- index_end - min(initial_history_load_size,index_end)
-    index_load_end <- min(initial_history_load_size,index_end,max_load_size)
+    # index_load_end <- min(initial_history_load_size,index_end,max_load_size)
   }else{
     if(index_last_loaded > index_end){
       index_load_start <- 0
@@ -161,7 +161,7 @@ get_redis_list <- function(host = redis_host,
   
   new_lines <- NULL
   
-  if (redux::redis_available(host = host) ||  index_end > 0 || new_entries > 0){
+  if (redux::redis_available(host = host) ||  index_end > 0 || index_load_end - index_load_start > 0){
     tryCatch(
       {
         {
