@@ -38,14 +38,14 @@ renderValueBox_rate <- function(event_data = all_data, event_type = "all"){
   renderValueBox({
     # The downloadRate is the number of rows in flow_data since
     # either first_timestamp or max_age_secs ago, whichever is later.
-    elapsed <- Sys.time() - first_timestamp()
+    elapsed <- round(difftime(Sys.time(), first_timestamp(), units="secs"),1)
     interval <- min(max_age_secs, elapsed)
     download_rate <- nrow(event_data()) / interval
     
      if(interval < 120){
        label <- paste( event_type , "request per sec (last",interval, "sec)")
      }else{
-       label <- paste( event_type , "request per sec (last",round(interval/60,1), "min)")
+       label <- paste( event_type , "request per sec (last",interval, "min)")
      }
     
     print(paste("first timestamp:",first_timestamp(),"elapsed:",interval))
@@ -101,7 +101,7 @@ renderValueBox_requests <- function(event_stream = event_stream, event_type = "a
 renderText_report_period_text <- function(event_data = all_data, event_type = "all"){
   renderText({
     time_period <- event_data()  %>%
-      summarise('min_timestamp' = as_datetime(min(timestamp_num)), 'max_timestamp' = as_datetime(max(timestamp_num)))
+      summarise('min_timestamp' = min(timestamp), 'max_timestamp' = max(timestamp))
     
     format(round(time_period$max_timestamp - time_period$min_timestamp,2))
   })
@@ -111,7 +111,7 @@ renderText_report_period_text <- function(event_data = all_data, event_type = "a
 renderText_report_period <- function(event_data = all_data, event_type = "all"){
   renderValueBox({
     time_period <- event_data()  %>%
-      summarise('min_timestamp' = as_datetime(min(timestamp_num)), 'max_timestamp' = as_datetime(max(timestamp_num)))
+      summarise('min_timestamp' = min(timestamp), 'max_timestamp' = max(timestamp))
     period_text <- format(round(time_period$max_timestamp - time_period$min_timestamp,2))
     valueBox(
       period_text,
@@ -140,6 +140,19 @@ renderBubbles_destination <- function(event_data = all_data, event_type = "all",
     
     bubbles(df$n, df$value_column, key = df$value_column)
   })
+}
+
+renderTable_event_count <- function(event_data = all_data){
+  renderTable({
+    event_data() %>%
+      group_by(event_type) %>%
+      tally() %>%
+      arrange(desc(n), tolower(event_type)) %>%
+      mutate(percentage = n / nrow(event_data() ) * 100) %>%
+      select("Event Type" = event_type, "% of events" = percentage) %>%
+      as.data.frame() %>%
+      head(15)
+  }, digits = 1, options = list(scrollX = TRUE))
 }
 
 # output$flow.destination.table <- output$flow.dest_ip.table <- 

@@ -70,7 +70,7 @@ eventData <- function(alrtStream, timeWindow, event_type = '') {
       #   hide_waiter()
       # }
       # df <- new_lines
-      if(e_type == '')
+      if(e_type == '' || e_type == 'all')
         e_type <- event_types
       
       data_out <- df %>%
@@ -111,7 +111,7 @@ requestCount <- function(alrtStream, event_type = "") {
     if (is.null(df))
       return(memo)
     
-    if(e_type == '')
+    if(e_type == '' || e_type == 'all')
       e_type <- event_types
     
     memo + nrow(filter(df,event_type %in% e_type))
@@ -137,7 +137,7 @@ destinationCount <- function(alrtStream, event_type = "") {
     if (is.null(df))
       return(memo)
     
-    if(e_type == '')
+    if(e_type == '' || e_type == 'all')
       e_type <- event_types
     
     memo + (df %>% 
@@ -156,7 +156,7 @@ firstTimestamp <- function(alrtStream, event_type = '') {
     if (is.null(df))
       return(memo)
     
-    if(e_type == '')
+    if(e_type == '' || e_type == 'all')
       e_type <- event_types
     
     if(nrow(df) == 0)
@@ -174,7 +174,7 @@ lastTimestamp <- function(alrtStream, event_type = '') {
     if (is.null(df))
       return(memo)
     
-    if(e_type == '')
+    if(e_type == '' || e_type == 'all')
       e_type <- event_types
     
     if(nrow(df) == 0)
@@ -193,7 +193,7 @@ totalBytes <- function(alrtStream, event_type = "") {
     if (is.null(df))
       return(memo)
     
-    if(e_type == '')
+    if(e_type == '' || e_type == 'all')
       e_type <- event_types
     
     if(event_type == 'http')

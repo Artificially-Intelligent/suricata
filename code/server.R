@@ -245,7 +245,7 @@ auth0_server(function(input, output, session, options) {
   
   source('server/s_data.R', local = TRUE)
   
-  source('server/s_event_summary.R', local = TRUE)
+  # source('server/s_event_summary.R', local = TRUE)
   
   source('server/s_event.R', local = TRUE)
   
@@ -334,7 +334,26 @@ print(output_type)
   #hide_waiter()
   
   
-
+  # ALL Summary
+  
+  all_data <- eventData(event_stream, max_age_secs, event_type = "all")
+  # all_data <- eventData(event_stream, max_age_secs, event_type = "all")
+  
+  # ALL Dashboard
+  output$all.rate <- renderValueBox_rate( event_type = "all", event_data = all_data)
+  output$all.destinations <- renderValueBox_destinations(event_stream = event_stream, event_type = "all")
+  output$all.requests <- renderValueBox_requests(event_stream = event_stream, event_type = "all")
+  output$all.bytes <- renderValueBox_requests(event_stream = event_stream, event_type = "all")
+  output$all.report_period <- renderText_report_period(event_data = all_data, event_type = "all")
+  output$all.destination.bubbleplot <- renderBubbles_destination(event_data = all_data, event_type = "all")
+  output$all.destination.table <- renderTable_dest_ip(event_data = all_data, event_type = "all")
+  
+  output$all.event_count.table <- renderTable_event_count(event_data = all_data)
+  
+  # ALL Table
+  output$all.table <- renderDT_table(event_data = all_data, event_type = "all")
+  output$all.download_csv <-downloadHandler_csv(event_data = all_data, event_type = "all")
+  
     
   # DNS
   
