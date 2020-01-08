@@ -12,6 +12,7 @@ data_load_status <- reactiveValues(
 
 alertStream <- function(session) {
   redis_conn <- safe_redis(host = redis_host) 
+  # redis_conn$PING()
   # Returns new lines
   newLines <- reactive({
     
@@ -65,6 +66,7 @@ alertStream <- function(session) {
 # (assuming the presence of a "received" field)
 eventData <- function(alrtStream, timeWindow, event_type = '') {
   shinySignals::reducePast(alrtStream, function(memo, df,e_type = event_type) {
+    
     if(!is.null(df)){
       # if(nrow(df)  < default_load_size){
       #   hide_waiter()
@@ -96,9 +98,20 @@ eventData <- function(alrtStream, timeWindow, event_type = '') {
     if(length(hidden_columns) > 0 && nrow(data_out) > 0)
       data_out[,hidden_columns] <- 'hidden'
     
-    if(nrow(data_out)>0)
-      hide_waiter()
     
+    if(nrow(data_out) > 0){
+      hide_waiter()  
+    }else{
+      if(last_timestamp() < (Sys.time() - timeWindow)){
+        hide_waiter()
+        show_waiter(
+          tagList(
+            spin_wandering_cubes(),
+            div(class='loading-text',paste(sep = '', "No traffic in source database in reporting window(", (Sys.time() - timeWindow), "-now). Waiting for system to aquire new traffic data..."))
+          )
+        )
+      }
+    }
     return(data_out)
     
     
@@ -106,7 +119,17 @@ eventData <- function(alrtStream, timeWindow, event_type = '') {
 }
 
 # Count the total nrows of alrtStream
-requestCount <- function(alrtStream, event_type = "") {
+requestCount <- function(event_data = event_data, event_type = "") {
+    if(event_type == '' || event_type == 'all')
+      event_type <- event_types
+
+    df <- event_data() %>% 
+              filter(event_type %in% event_type) %>% 
+              tally()
+    df$n
+}
+
+latestRequestCount <- function(alrtStream, event_type = "") {
   shinySignals::reducePast(alrtStream, function(memo, df, e_type = event_type) {
     if (is.null(df))
       return(memo)
@@ -114,9 +137,17 @@ requestCount <- function(alrtStream, event_type = "") {
     if(e_type == '' || e_type == 'all')
       e_type <- event_types
     
-    memo + nrow(filter(df,event_type %in% e_type))
+    df <- df %>% 
+      filter(event_type %in% e_type) %>% 
+      tally()
+    
+    memo + df$n
+    
+    # memo + nrow(filter(df,event_type %in% e_type))
   }, 0)
 }
+
+
 
 httpSuccessCount <- function(alrtStream){
   shinySignals::reducePast(alrtStream, function(memo, df) {
@@ -149,6 +180,72 @@ destinationCount <- function(alrtStream, event_type = "") {
   }, 0)
 }
 
+valueCount <- function(event_data = event_data, event_type = event_type, value_column = value_column){
+  
+  if(event_type == '' || event_type == 'all')
+    event_type <- event_types
+  
+  
+  if (nrow(event_data()) == 0)
+    return()
+  
+  df <- event_data()
+  df$value_column <- df[,value_column]
+  order <- unique(df$value_column)
+  
+  df <- df %>%
+    filter(event_type %in% event_type) %>% 
+    group_by(value_column) %>%
+    tally() %>%
+    arrange(desc(n), tolower(value_column))
+  df
+}
+
+valueSum <- function(event_data = event_data, event_type = event_type, value_column = value_column, measure_column = measure_column){
+  
+  if(event_type == '' || event_type == 'all')
+    event_type <- event_types
+  
+  if (nrow(event_data()) == 0)
+    return()
+   
+  df <- event_data()
+  length(measure_column)
+  # for(measure in measure_column){
+  #   measure
+  # }
+ 
+  df$value_column <- df[,value_column]
+  
+  df$measure_column <- df[,measure_column[1]]
+  if(length(measure_column) >= 2){
+    df$measure_column2 <- df[,measure_column[2]]
+  }else{
+    df$measure_column2 <- NA
+  }
+  if(length(measure_column) >= 3){
+    df$measure_column3 <- df[,measure_column[3]]
+  }else{
+    df$measure_column3 <- NA
+  }
+  if(length(measure_column) >= 4){
+    df$measure_column4 <- df[,measure_column[4]]
+  }else{
+    df$measure_column4 <- NA
+  }
+  df <- df %>%
+    filter(event_type %in% event_type) %>% 
+    group_by(value_column) %>%
+    summarise(measure_column = sum(measure_column)
+              ,measure_column2 = sum(measure_column2)
+              ,measure_column3 = sum(measure_column3)
+              ,measure_column4 = sum(measure_column4)
+              ) %>%
+    arrange(desc(measure_column), tolower(value_column))
+  df <- df[,1:(length(measure_column)+ 1)]
+  colnames(df) <- c(value_column, measure_column)
+  df
+}
 
 # Count the total nrows of distinct alrtStream$dest_ip
 firstTimestamp <- function(alrtStream, event_type = '') {
@@ -304,43 +401,44 @@ mapData <- function(alrtData, event_type = '' , color_column  = 'event_type',gro
     group_by(country_name, country_code, city, 
             # ip, 
              long, lat, color,polyline, color_column) %>%
-    summarise( popup_html = (paste(
-      '<div class="alert_details_name"><h4>', unique(city), " (", unique(country_code) , ')<h4></div>',
-      '<div class="alert_details">IP Address(s)', paste(Filter(Negate(is.na),unique(dest_ip)),collapse =',\n'), '</div>',
-      '<div class="alert_details">Event Type(s):',paste(Filter(Negate(is.na),unique( event_type)),collapse =',\n'), '</div>',
-      '<div class="alert_details">Traffic Type(s):',paste(Filter(Negate(is.na),unique( app_proto)),collapse =',\n'), '</div>',
-      '<div class="alert_details">Requests:', n(), '</div>',
-      (if('flow' %in% event_type) paste(
-        '<div class="alert_details">Alert Triggered:', ('TRUE' %in% flow.alerted) , '</div>',
-        '<div class="alert_details">Bytes to Client:', sum(flow.bytes_toclient), '</div>',
-        '<div class="alert_details">Bytes to Server:', sum(flow.bytes_toserver), '</div>',
-        '<div class="alert_details">Packets to Client:', sum(flow.pkts_toclient), '</div>',
-        '<div class="alert_details">Packets to Server:', sum(flow.pkts_toclient), '</div>'
-        )
-      ),(if('netflow' %in% event_type) paste(
-        '<div class="alert_details">Bytes:', sum(netflow.bytes), '</div>',
-        '<div class="alert_details">Packets:', sum(netflow.pkts), '</div>'
-        )
-      ),
-      (if('http' %in% event_type) paste(
-        '<div class="alert_details">HTTP Hostname(s):',paste(Filter(Negate(is.na),unique( http.hostname)),collapse =',\n'), '</div>',
-        '<div class="alert_details">HTTP Server(s):', paste(Filter(Negate(is.na),unique( http.server)),collapse =', '), '</div>',
-        '<div class="alert_details">HTTP Method(s):', paste(Filter(Negate(is.na),unique( http.http_method)),collapse =', '), '</div>',
-        '<div class="alert_details">HTTP Bytes:', sum(http.length, na.rm=T ), '</div>'
-      )),
-      (if('dns' %in% event_type) paste(
-        '<div class="alert_details">DNS Resource Record(s):',paste(Filter(Negate(is.na),unique( dns.rrname)),collapse =',\n'), '</div>',
-        '<div class="alert_details">DNS Message Type(s):', paste(Filter(Negate(is.na),unique( dns.type)),collapse =', '), '</div>'
-      )),
-      (if('alert' %in% event_type) paste(
-        '<div class="alert_details">Alert Category(s):',paste(Filter(Negate(is.na),unique( alert.category)),collapse =',\n'), '</div>',
-        '<div class="alert_details">Alert Action(s):', paste(Filter(Negate(is.na),unique( alert.action)),collapse =', '), '</div>',
-        '<div class="alert_details">Alert Signature(s):', paste(Filter(Negate(is.na),unique( alert.signature)),collapse =', '), '</div>',
-        '<div class="alert_details">Alert Severity(s):', paste(Filter(Negate(is.na),unique( alert.severity)),collapse =', '), '</div>'
-      )),
-      '</div>',
-    sep = ' ')
-    ),
+     summarise( 
+    # popup_html = (paste(
+    #   '<div class="alert_details_name"><h4>', unique(city), " (", unique(country_code) , ')<h4></div>',
+    #   '<div class="alert_details">IP Address(s)', paste(Filter(Negate(is.na),unique(dest_ip)),collapse =',\n'), '</div>',
+    #   '<div class="alert_details">Event Type(s):',paste(Filter(Negate(is.na),unique( event_type)),collapse =',\n'), '</div>',
+    #   '<div class="alert_details">Traffic Type(s):',paste(Filter(Negate(is.na),unique( app_proto)),collapse =',\n'), '</div>',
+    #   '<div class="alert_details">Requests:', n(), '</div>',
+    #   (if('flow' %in% event_type) paste(
+    #     '<div class="alert_details">Alert Triggered:', ('TRUE' %in% flow.alerted) , '</div>',
+    #     '<div class="alert_details">Bytes to Client:', sum(flow.bytes_toclient), '</div>',
+    #     '<div class="alert_details">Bytes to Server:', sum(flow.bytes_toserver), '</div>',
+    #     '<div class="alert_details">Packets to Client:', sum(flow.pkts_toclient), '</div>',
+    #     '<div class="alert_details">Packets to Server:', sum(flow.pkts_toclient), '</div>'
+    #     )
+    #   ),(if('netflow' %in% event_type) paste(
+    #     '<div class="alert_details">Bytes:', sum(netflow.bytes), '</div>',
+    #     '<div class="alert_details">Packets:', sum(netflow.pkts), '</div>'
+    #     )
+    #   ),
+    #   (if('http' %in% event_type) paste(
+    #     '<div class="alert_details">HTTP Hostname(s):',paste(Filter(Negate(is.na),unique( http.hostname)),collapse =',\n'), '</div>',
+    #     '<div class="alert_details">HTTP Server(s):', paste(Filter(Negate(is.na),unique( http.server)),collapse =', '), '</div>',
+    #     '<div class="alert_details">HTTP Method(s):', paste(Filter(Negate(is.na),unique( http.http_method)),collapse =', '), '</div>',
+    #     '<div class="alert_details">HTTP Bytes:', sum(http.length, na.rm=T ), '</div>'
+    #   )),
+    #   (if('dns' %in% event_type) paste(
+    #     '<div class="alert_details">DNS Resource Record(s):',paste(Filter(Negate(is.na),unique( dns.rrname)),collapse =',\n'), '</div>',
+    #     '<div class="alert_details">DNS Message Type(s):', paste(Filter(Negate(is.na),unique( dns.type)),collapse =', '), '</div>'
+    #   )),
+    #   (if('alert' %in% event_type) paste(
+    #     '<div class="alert_details">Alert Category(s):',paste(Filter(Negate(is.na),unique( alert.category)),collapse =',\n'), '</div>',
+    #     '<div class="alert_details">Alert Action(s):', paste(Filter(Negate(is.na),unique( alert.action)),collapse =', '), '</div>',
+    #     '<div class="alert_details">Alert Signature(s):', paste(Filter(Negate(is.na),unique( alert.signature)),collapse =', '), '</div>',
+    #     '<div class="alert_details">Alert Severity(s):', paste(Filter(Negate(is.na),unique( alert.severity)),collapse =', '), '</div>'
+    #   )),
+    #   '</div>',
+    # sep = ' ')
+    # ),
     requests = n(), 
     bytes = max(sum(http.length, na.rm=T ),
                 (sum(flow.bytes_toclient, na.rm=T ) + sum(flow.bytes_toserver, na.rm=T )),

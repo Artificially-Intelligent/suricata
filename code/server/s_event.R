@@ -33,22 +33,55 @@
 # }
 
 
-# output$flow.rate <- 
-renderValueBox_rate <- function(event_data = all_data, event_type = "all"){
+# # output$event.rate <- 
+# renderValueBox_rate <- function(event_count = all_count, event_type = "all"){
+#   renderValueBox({
+#     
+#     # The downloadRate is the number of rows in event_data since
+#     # either first_timestamp or max_age_secs ago, whichever is later.
+#     
+#     elapsed <- round(difftime(Sys.time(), first_timestamp(), units="secs"),1)
+#     interval <- min(max_age_secs, elapsed)
+#     download_rate <- event_count() / interval
+#     
+#      if(interval < 120){
+#        label <- paste( event_type , "request per sec (last",interval, "sec)")
+#      }else{
+#        label <- paste( event_type , "request per sec (last",interval, "min)")
+#      }
+#     
+#     print(paste("first timestamp:",first_timestamp(),"elapsed:",interval))
+#     
+#     valueBox(
+#       value = formatC(download_rate, digits = 1, format = "f"),
+#       subtitle = label,
+#       icon = icon("area-chart")
+#       # ,
+#       # color = if (download_rate >= input$rateThreshold) "yellow" else "aqua"
+#     )
+#   })
+# }
+
+# output$event.rate <- 
+renderValueBox_rate <- function(event_stream = event_stream, event_type = "all"){
+  event_count <- latestRequestCount(event_stream, event_type)
+  
   renderValueBox({
-    # The downloadRate is the number of rows in flow_data since
+    
+    # The downloadRate is the number of rows in event_data since
     # either first_timestamp or max_age_secs ago, whichever is later.
-    elapsed <- round(difftime(Sys.time(), first_timestamp(), units="secs"),1)
+    
+    elapsed <- round( difftime(last_timestamp(), first_timestamp(), units="secs"),1)
     interval <- min(max_age_secs, elapsed)
-    download_rate <- nrow(event_data()) / interval
+    download_rate <- event_count() / interval
     
-     if(interval < 120){
-       label <- paste( event_type , "request per sec (last",interval, "sec)")
-     }else{
-       label <- paste( event_type , "request per sec (last",interval, "min)")
-     }
+    if(interval < 120){
+      label <- paste( event_type , "request per sec (last",interval, "sec)")
+    }else{
+      label <- paste( event_type , "request per sec (last",interval, "min)")
+    }
     
-    print(paste("first timestamp:",first_timestamp(),"elapsed:",interval))
+    # print(paste("first timestamp:",first_timestamp(),"elapsed:",interval))
     
     valueBox(
       value = formatC(download_rate, digits = 1, format = "f"),
@@ -60,32 +93,72 @@ renderValueBox_rate <- function(event_data = all_data, event_type = "all"){
   })
 }
 
-# output$flow.destinations <-
-renderValueBox_destinations <- function( event_stream = event_stream,event_type = "all"){
-  destination_count <- destinationCount(event_stream, event_type)
-   renderValueBox({
+
+
+# output$event.destinations <-
+renderValueBox_value_count <- function(event_data = event_data, event_type = "all", value_column = 'dest_ip', icon_desc = 'desktop'){
+  # destinationCount(event_stream, event_type)
+  renderValueBox({
+    unique_value_count <- nrow(valueCount(event_data = event_data, event_type = event_type, value_column = value_column)) 
+    label <- paste("Unique", simple_cap(str_replace(value_column,'_', ' ')))
     valueBox(
-      destination_count(),
-      paste("Unique", event_type ,"Desintations"),
-      icon = icon("desktop")
+      unique_value_count,
+      label,
+      icon = icon(icon_desc)
+    )
+  })
+}
+# 
+# if(event_type == 'http')
+#   return(memo + (df %>% 
+#                    filter(event_type %in% e_type) %>% 
+#                    summarise(total_bytes = sum(http.length)) 
+#   )
+#   )
+# if(event_type == 'fileinfo')
+#   return(memo + (df %>% 
+#                    filter(event_type %in% e_type) %>% 
+#                    summarise(total_bytes = sum(fileinfo.size )) 
+#   )
+#   )
+# if(event_type == 'flow')
+#   return(memo + (df %>% 
+#                    filter(event_type %in% e_type) %>% 
+#                    summarise(total_bytes = sum(flow.bytes_toclient) +  sum(flow.bytes_toserver))
+#   )
+#   )
+
+renderValueBox_value_sum <- function(event_data = event_data, event_type = "all", value_column = 'dest_ip', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), icon_desc = 'desktop'){
+  # destinationCount(event_stream, event_type)
+  renderValueBox({
+    value_sum <- valueSum(event_data = event_data, event_type = event_type, value_column = value_column, measure_column = measure_column) 
+    value_sum[is.na(value_sum)] <- 0
+    total_sum <- sum(value_sum[,2:length(value_sum)]) %>% 
+      comprss()
+    label <- paste(simple_cap(str_replace_all(str_replace_all( paste(collapse = ' + ', measure_column),'_', ' '),"\\.", ' ')))
+    valueBox(
+      total_sum,
+      label,
+      icon = icon(icon_desc)
     )
   })
 }
 
-# output$flow.requests <- 
-renderValueBox_requests <- function(event_stream = event_stream,  event_type = "all"){
-  request_count <- requestCount(event_stream,event_type)
+# output$event.requests <- 
+renderValueBox_requests <- function(event_data = event_data,  event_type = "all"){
+  
   renderValueBox({
+    request_count <- requestCount(event_data,event_type)
     valueBox(
-      request_count(),
+      request_count,
       paste("Total", event_type ,"Volume (requests)"),
       icon = icon("window-restore")
     )
   })
 }
 
-# output$flow.bytes <- 
-renderValueBox_requests <- function(event_stream = event_stream, event_type = "all"){
+# output$event.bytes <- 
+renderValueBox_bytes <- function(event_stream = event_stream, event_type = "all"){
   bytes_total <-  totalBytes(event_stream,event_type)
   renderValueBox({
     valueBox(
@@ -97,22 +170,29 @@ renderValueBox_requests <- function(event_stream = event_stream, event_type = "a
   })
 }
 
-# output$flow.report_period_text <- 
-renderText_report_period_text <- function(event_data = all_data, event_type = "all"){
+# output$event.report_period_text <- 
+renderText_report_period_text <- function(){
   renderText({
-    time_period <- event_data()  %>%
-      summarise('min_timestamp' = min(timestamp), 'max_timestamp' = max(timestamp))
+    time_period <- last_timestamp()  - first_timestamp()
+    period_text <- format(round(time_period,2))
     
-    format(round(time_period$max_timestamp - time_period$min_timestamp,2))
+    # time_period <- event_data()  %>%
+    # period_text <- summarise('min_timestamp' = min(timestamp), 'max_timestamp' = max(timestamp))
+    
+    period_text
   })
+  
 }
 
-# output$flow.report_period <- 
-renderText_report_period <- function(event_data = all_data, event_type = "all"){
+# output$event.report_period <- 
+renderText_report_period <- function(){
   renderValueBox({
-    time_period <- event_data()  %>%
-      summarise('min_timestamp' = min(timestamp), 'max_timestamp' = max(timestamp))
-    period_text <- format(round(time_period$max_timestamp - time_period$min_timestamp,2))
+    time_period <- last_timestamp()  - first_timestamp()
+    period_text <- format(round(time_period,2))
+    
+    # time_period <- event_data()  %>%
+    #   summarise('min_timestamp' = min(timestamp), 'max_timestamp' = max(timestamp))
+    # period_text <- format(round(time_period$max_timestamp - time_period$min_timestamp,2))
     valueBox(
       period_text,
       "Current Report Period Length",
@@ -121,20 +201,11 @@ renderText_report_period <- function(event_data = all_data, event_type = "all"){
   })
 }
 
-# output$flow.destination.bubbleplot <- output$flow.dest_ip.bubbleplot <- 
-renderBubbles_destination <- function(event_data = all_data, event_type = "all", value_column = 'dest_ip'){
+# output$event.destination.bubbleplot <- output$event.dest_ip.bubbleplot <- 
+renderBubbles_value <- renderBubbles_destination <- function(event_data = all_data, event_type = "all", value_column = 'dest_ip'){
   renderBubbles({
-    if (nrow(event_data()) == 0)
-      return()
     
-    df <- event_data()
-    df$value_column <- df[,value_column]
-    order <- unique(df$value_column)
-    
-    df <- df %>%
-      group_by(value_column) %>%
-      tally() %>%
-      arrange(desc(n), tolower(value_column)) %>%
+    df <- valueCount(event_data = event_data, event_type = event_type, value_column = value_column)    %>%
       # Just show the top 30, otherwise it gets hard to see
       head(30)
     
@@ -142,38 +213,31 @@ renderBubbles_destination <- function(event_data = all_data, event_type = "all",
   })
 }
 
-renderTable_event_count <- function(event_data = all_data){
+
+renderTable_value <- function(event_data = all_data, event_type = "all", value_column = 'event_type'){
   renderTable({
-    event_data() %>%
-      group_by(event_type) %>%
-      tally() %>%
-      arrange(desc(n), tolower(event_type)) %>%
-      mutate(percentage = n / nrow(event_data() ) * 100) %>%
-      select("Event Type" = event_type, "% of events" = percentage) %>%
+    total_count <- requestCount(event_data, event_type)
+    
+    df <- valueCount(event_data = event_data, event_type = event_type, value_column = value_column) 
+    column_heading_value = simple_cap(str_replace(value_column,'_', ' '))
+    column_heading_measure = "count" 
+    column_heading_measure_pct = paste("% by ",column_heading_measure) 
+    df <- df %>%
+      mutate(percentage = n / total_count * 100) %>%
+      select(column_heading_value = value_column, column_heading_measure = n, column_heading_measure_pct = percentage) %>%
       as.data.frame() %>%
       head(15)
+    colnames(df) <- c(column_heading_value,column_heading_measure,column_heading_measure_pct)
+    df
   }, digits = 1, options = list(scrollX = TRUE))
 }
 
-# output$flow.destination.table <- output$flow.dest_ip.table <- 
-renderTable_dest_ip <- function(event_data = all_data, event_type = "all"){
-  renderTable({
-    event_data() %>%
-      group_by(dest_ip) %>%
-      tally() %>%
-      arrange(desc(n), tolower(dest_ip)) %>%
-      mutate(percentage = n / nrow(event_data()) * 100) %>%
-      select("Destination IP" = dest_ip, "% of requests" = percentage) %>%
-      as.data.frame() %>%
-      head(15)
-  }, digits = 1, options = list(scrollX = TRUE))
-}
 
-# output$flow.raw <- 
+# output$event.raw <- 
 renderPrint_raw <- function(event_data = all_data, event_type = "all"){
   renderPrint({
     #orig <- options(width = 1000)
-      event_data() %>%
+    event_data() %>%
       remove_empty(which = c("rows", "cols")) %>%
       # select( timestamp,
       #         flow_id,
@@ -193,12 +257,12 @@ renderPrint_raw <- function(event_data = all_data, event_type = "all"){
 
 
 
-# output$flow.table <- 
+# output$event.table <- 
 renderDT_table <- function(event_data = all_data, event_type = "all"){
   renderDT({
     # updateSliderTextInput(session,"data_refresh_rate",selected = 120) 
     
-      event_data() %>% 
+    event_data() %>% 
       mutate(timestamp = as_datetime(timestamp, tz = Sys.timezone(location = TRUE))
              # ,flow.start = as_datetime(flow.start, tz = Sys.timezone(location = TRUE))
              # ,flow.end = as_datetime(flow.end, tz = Sys.timezone(location = TRUE))  
@@ -207,20 +271,20 @@ renderDT_table <- function(event_data = all_data, event_type = "all"){
       remove_empty(which = c("rows", "cols")) %>%
       as.data.frame()
     
-    }, 
+  }, 
   class = "display nowrap compact", # style
   filter = "top", # location of column filters
   options = list(scrollX = TRUE)
   )
 }
 
-# output$flow.download_csv <- 
+# output$event.download_csv <- 
 downloadHandler_csv <- function(event_data = all_data, event_type = "all"){
   downloadHandler(
     filename = paste(event_type,".csv"),
     
     content = function(file) {
-        event_data() %>%
+      event_data() %>%
         remove_empty(which = c("rows", "cols")) %>%
         write.csv(file)
     },
@@ -228,7 +292,7 @@ downloadHandler_csv <- function(event_data = all_data, event_type = "all"){
   )
 }
 
-# output$flow.app_proto_server_bytes.barplot <- 
+# output$event.app_proto_server_bytes.barplot <- 
 renderPlotly_app_proto_server_bytes.barplot <- function(event_data = all_data, event_type = "all"){
   renderPlotly({
     df <- event_data()
@@ -251,7 +315,7 @@ renderPlotly_app_proto_server_bytes.barplot <- function(event_data = all_data, e
   })
 }
 
-# output$flow.app_proto_client_bytes.barplot <- 
+# output$event.app_proto_client_bytes.barplot <- 
 renderPlotly_app_proto_client_bytes.barplot <- function(event_data = all_data, event_type = "all"){
   renderPlotly({
     df <- event_data()
@@ -274,13 +338,13 @@ renderPlotly_app_proto_client_bytes.barplot <- function(event_data = all_data, e
   })
 }
 
-# output$flow.app_proto_server_bytes2.barplot <- 
+# output$event.app_proto_server_bytes2.barplot <- 
 renderPlotly_app_proto_server_averaged_bytes.barplot <- function(event_data = all_data, event_type = "all"){
   renderPlotly({
     df <- event_data()
     if (nrow(df) == 0)
       return()
-  
+    
     ######
     # spread value over seconds in datetime range
     df_results <- data.frame(
@@ -301,7 +365,7 @@ renderPlotly_app_proto_server_averaged_bytes.barplot <- function(event_data = al
       df_results <- rbind(df_results,df_spread)
     }
     df_results$time <- as_datetime(df_results$time, origin = lubridate::origin, tz = Sys.timezone(location = TRUE))
-  ###########  
+    ###########  
     
     df <- df_results
     rm(df_results)
@@ -391,7 +455,7 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
         
         #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
         fitBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2]) %>%
-         addCircles_f(df) 
+        addCircles_f(df) 
       
       m
     }else{
@@ -405,15 +469,15 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
 leaflet_mapdata <- function(event_data = all_data, event_type = "all"){
   df <- event_data() %>%
     mutate(country_name = dest_country_name, country_code = dest_country_code, city = dest_city, 
-                            ip = dest_ip, long = dest_long,lat = dest_lat)
-
-    current_map_bounds_var <- paste('input$', event_type,'_map_leaflet_bounds',sep='')
-    bounds <- eval(parse(text = current_map_bounds_var))
-    if (is.null(bounds)){
-      df
-    } else {
-      in_bounding_box(df, bounds)
-    }
+           ip = dest_ip, long = dest_long,lat = dest_lat)
+  
+  current_map_bounds_var <- paste('input$', event_type,'_map_leaflet_bounds',sep='')
+  bounds <- eval(parse(text = current_map_bounds_var))
+  if (is.null(bounds)){
+    df
+  } else {
+    in_bounding_box(df, bounds)
+  }
 }
 
 # 
@@ -448,7 +512,7 @@ renderValueBox_mapvalue <- function(event_data = all_data, event_type = "all", v
         result <- 'invalid opp selected'
     }else{
       if(nchar(filter_column) > 0 && nchar(filter_value) > 0){
-          dt <- dt[dt[filter_column] == filter_value,]
+        dt <- dt[dt[filter_column] == filter_value,]
       }
       if(nchar(value) > 0)
         dt <- dt[dt[,value_column] == value,]
@@ -464,22 +528,22 @@ renderValueBox_mapvalue <- function(event_data = all_data, event_type = "all", v
         if(length(value_Vector) > 0)
           if(! is.null(names(value_Vector[[1]])))
             actual_value_column <- names(value_Vector[[1]])[1]
-        
-        value_Vector <- unlist(lapply(value_Vector, (function(x) { if(!is.null(x)){(x[1])}else{0}})))
-        
+          
+          value_Vector <- unlist(lapply(value_Vector, (function(x) { if(!is.null(x)){(x[1])}else{0}})))
+          
       }
       
       if(value_column != actual_value_column)
         auto_label <- paste(auto_label,actual_value_column,sep='.')
       
       result <- switch(opp,
-             'count' = length(value_Vector),
-             'unique_count' = length(unique(value_Vector)),
-             'sum' = sum(as.numeric(value_Vector)),
-             'max' = max(as.numeric(value_Vector)),
-             'min' = min(as.numeric(value_Vector)),
-             'median' = median(as.numeric(value_Vector)),
-             'mean' = mean(as.numeric(value_Vector))
+                       'count' = length(value_Vector),
+                       'unique_count' = length(unique(value_Vector)),
+                       'sum' = sum(as.numeric(value_Vector)),
+                       'max' = max(as.numeric(value_Vector)),
+                       'min' = min(as.numeric(value_Vector)),
+                       'median' = median(as.numeric(value_Vector)),
+                       'mean' = mean(as.numeric(value_Vector))
       ) %>% 
         comprss()
       
@@ -499,9 +563,6 @@ renderValueBox_mapvalue <- function(event_data = all_data, event_type = "all", v
   })
   
 }
-
-
-
 
 # renderValueBox_mapvalue_count <- function(event_data = all_data, event_type = "all", value_column = 'event_type', value = '', filter_column = '', filter_value = '', unique_count = FALSE, icon_name = "chart-line"){
 #   renderValueBox({
@@ -576,38 +637,38 @@ renderValueBox_mapvalue <- function(event_data = all_data, event_type = "all", v
 #   })
 #   
 # }
-
-renderTable_maptable_summary <- function(event_data = all_data, event_type = "all", value_column = 'event_type'){
-  renderTable({
-    
-    dt <- leaflet_mapdata(event_data = event_data, event_type = event_type)
-    dt <- Filter(Negate(is.null), dt[,value_column]) 
-    
-    dt <- data.frame(dt) %>%
-      group_by(dt) %>%
-      summarise(count = n())
-    
-    names(dt) <- c(value_column,'count')
-    dt
-    
-    # browser()
-    # dt$dns.rrtype
-    # dt$dns.rrtype
-    # dt$dns.answers.count <- length(dt[,'dns.answers'])
-    # p <- ggplot(data = dt, aes(dt$dns.rrtype)) +
-    #   geom_bar()
-    #   # geom_point(aes(text = paste("Clarity:", clarity)), size = 4) +
-    #   # geom_smooth(aes(colour = cut, fill = cut)) + facet_wrap(~ cut)
-    # 
-    # ggplotly(p)
-    # 
-    
-  }, 
-  class = "display nowrap compact", # style
-  filter = "top", # location of column filters
-  options = list(scrollX = TRUE)
-  )
-}
+# 
+# renderTable_maptable_summary <- function(event_data = all_data, event_type = "all", value_column = 'event_type'){
+#   renderTable({
+#     
+#     dt <- leaflet_mapdata(event_data = event_data, event_type = event_type)
+#     dt <- Filter(Negate(is.null), dt[,value_column]) 
+#     
+#     dt <- data.frame(dt) %>%
+#       group_by(dt) %>%
+#       summarise(count = n())
+#     
+#     names(dt) <- c(value_column,'count')
+#     dt
+#     
+#     # browser()
+#     # dt$dns.rrtype
+#     # dt$dns.rrtype
+#     # dt$dns.answers.count <- length(dt[,'dns.answers'])
+#     # p <- ggplot(data = dt, aes(dt$dns.rrtype)) +
+#     #   geom_bar()
+#     #   # geom_point(aes(text = paste("Clarity:", clarity)), size = 4) +
+#     #   # geom_smooth(aes(colour = cut, fill = cut)) + facet_wrap(~ cut)
+#     # 
+#     # ggplotly(p)
+#     # 
+#     
+#   }, 
+#   class = "display nowrap compact", # style
+#   filter = "top", # location of column filters
+#   options = list(scrollX = TRUE)
+#   )
+# }
 
 
 

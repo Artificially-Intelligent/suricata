@@ -20,7 +20,7 @@ df_grouped <- df
                            fillColor = df_grouped$color,
                            #icon = ~map_icons[df$pt_domr],
                            #clusterOptions = markerClusterOptions(iconCreateFunction=JS(clusterJS)) ,
-                           popup = df_grouped$popup_html,
+                           popup = popup_f(df_grouped),
                            popupOptions = popupOptions(closeButton = FALSE), 
                            options = pathOptions(pane = "top_circles")
   )
@@ -29,7 +29,7 @@ df_grouped <- df
 
 popup_f <- function(df){
   # js <- "javascript:$('#map_view_btn').show();$('#sales_history_box').show();$('#table').show();$('#list_view_btn').hide();$('#map').hide();"
-  paste(popup_html_f(df)
+  paste('df'
          # ,"<a href=", js,  " class ='more_btn'>more..</a>"
   )
 }

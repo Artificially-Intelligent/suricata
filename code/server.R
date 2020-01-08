@@ -337,18 +337,17 @@ print(output_type)
   # ALL Summary
   
   all_data <- eventData(event_stream, max_age_secs, event_type = "all")
-  # all_data <- eventData(event_stream, max_age_secs, event_type = "all")
   
   # ALL Dashboard
-  output$all.rate <- renderValueBox_rate( event_type = "all", event_data = all_data)
-  output$all.destinations <- renderValueBox_destinations(event_stream = event_stream, event_type = "all")
-  output$all.requests <- renderValueBox_requests(event_stream = event_stream, event_type = "all")
-  output$all.bytes <- renderValueBox_requests(event_stream = event_stream, event_type = "all")
-  output$all.report_period <- renderText_report_period(event_data = all_data, event_type = "all")
+  output$all.rate <- renderValueBox_rate(event_stream = event_stream, event_type = "all")
+  output$all.destinations <- renderValueBox_value_count(value_column = 'dest_ip', icon_desc = 'desktop', event_data = all_data , event_type = "all")
+  output$all.requests <- renderValueBox_requests(event_data = all_data, event_type = "all")
+  output$all.bytes <- renderValueBox_value_sum(event_data = all_data, event_type = "all", value_column = 'event_type', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), icon_desc = 'desktop')
+  output$all.report_period <- renderText_report_period()
   output$all.destination.bubbleplot <- renderBubbles_destination(event_data = all_data, event_type = "all")
-  output$all.destination.table <- renderTable_dest_ip(event_data = all_data, event_type = "all")
+  output$all.destination.table <- renderTable_value(event_data = all_data, event_type = "all", value_column = 'dest_ip')
   
-  output$all.event_count.table <- renderTable_event_count(event_data = all_data)
+  output$all.event_count.table <- renderTable_value(event_data = all_data, event_type = "all", value_column = 'event_type')
   
   # ALL Table
   output$all.table <- renderDT_table(event_data = all_data, event_type = "all")
@@ -360,13 +359,13 @@ print(output_type)
   dns_data <- eventData(event_stream, max_age_secs, event_type = "dns")
   
   # DNS Dashboard
-  output$dns.rate <- renderValueBox_rate( event_type = "dns", event_data = dns_data)
-  output$dns.destinations <- renderValueBox_destinations(event_stream = event_stream, event_type = "dns")
-  output$dns.requests <- renderValueBox_requests(event_stream = event_stream, event_type = "dns")
-  output$dns.bytes <- renderValueBox_requests(event_stream = event_stream, event_type = "dns")
-  output$dns.report_period <- renderText_report_period(event_data = dns_data, event_type = "dns")
+  output$dns.rate <- renderValueBox_rate(event_stream = event_stream, event_type = "dns")
+  output$dns.destinations <- renderValueBox_value_count(value_column = 'dest_ip', icon_desc = 'desktop', event_data = dns_data , event_type = "dns")
+  output$dns.requests <- renderValueBox_requests(event_data = dns_data, event_type = "dns")
+  output$dns.bytes <- renderValueBox_value_sum(event_data = dns_data, event_type = "dns", value_column = 'event_type', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), icon_desc = 'desktop')
+  output$dns.report_period <- renderText_report_period()
   output$dns.destination.bubbleplot <- renderBubbles_destination(event_data = dns_data, event_type = "dns")
-  output$dns.destination.table <- renderTable_dest_ip(event_data = dns_data, event_type = "dns")
+  output$dns.destination.table <- renderTable_value(event_data = dns_data, event_type = "dns", value_column = 'dest_ip')
   
   # DNS Table
   output$dns.table <- renderDT_table(event_data = dns_data, event_type = "dns")
@@ -375,7 +374,7 @@ print(output_type)
   # DNS Map
   output$dns_map_leaflet <- renderLeaflet_map_destination(event_data = dns_data, event_type = "dns", color_column = 'dns.type')
   observeEvent_map_button(event_type = "dns", leafletId = "_map_leaflet", buttonId = "_zoom_all_button")
-  output$dns_map_table_summary <- renderTable_maptable_summary(event_data = dns_data, event_type = "dns", value_column = 'dns.type')
+  output$dns_map_table_summary <- renderTable_value(event_data = dns_data, event_type = "dns", value_column = 'dns.type')
   output$dns_map_table_detail  <- renderDT_maptable_detail(event_data = dns_data, event_type = "dns")
   output$dns_map.value.1   <- renderValueBox_mapvalue(event_data = dns_data, event_type = "dns", value_column = 'dns.rrname', filter_column = 'dns.type' ,filter_value = 'query', opp = 'count', icon_name = "question-circle")
   output$dns_map.value.2   <- renderValueBox_mapvalue(event_data = dns_data, event_type = "dns", value_column = 'dns.answers', opp = 'count',icon_name = "reply")
@@ -388,13 +387,14 @@ print(output_type)
   http_data <- eventData(event_stream, max_age_secs, event_type = "http")
   
   # HTTP Dashboard
-  output$http.rate <- renderValueBox_rate( event_type = "http", event_data = http_data)
-  output$http.destinations <- renderValueBox_destinations(event_stream = event_stream, event_type = "http")
-  output$http.requests <- renderValueBox_requests(event_stream = event_stream, event_type = "http")
-  output$http.bytes <- renderValueBox_requests(event_stream = event_stream, event_type = "http")
-  output$http.report_period <- renderText_report_period(event_data = http_data, event_type = "http")
+  output$http.rate <- renderValueBox_rate(event_stream = event_stream, event_type = "http")
+  
+  output$http.destinations <- renderValueBox_value_count(value_column = 'dest_ip', icon_desc = 'desktop', event_data = http_data , event_type = "http")
+  output$http.requests <- renderValueBox_requests(event_data = http_data, event_type = "http")
+  output$http.bytes <- renderValueBox_value_sum(event_data = http_data, event_type = "http", value_column = 'event_type', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), icon_desc = 'desktop')
+  output$http.report_period <- renderText_report_period()
   output$http.destination.bubbleplot <- renderBubbles_destination(event_data = http_data, event_type = "http", value_column = 'http.hostname')
-  output$http.destination.table <- renderTable_dest_ip(event_data = http_data, event_type = "http")
+  output$http.destination.table <- renderTable_value(event_data = http_data, event_type = "http", value_column = 'dest_ip')
   
   # HTTP Table
   output$http.table <- renderDT_table(event_data = http_data, event_type = "http")
@@ -403,26 +403,26 @@ print(output_type)
   # HTTP Map
   output$http_map_leaflet <- renderLeaflet_map_destination(event_data = http_data, event_type = "http", color_column = 'http.status')
   observeEvent_map_button(event_type = "http", leafletId = "_map_leaflet", buttonId = "_zoom_all_button")
-  output$http_map_table_summary <- renderTable_maptable_summary(event_data = http_data, event_type = "http", value_column = 'http.status')
+  output$http_map_table_summary <- renderTable_value(event_data = http_data, event_type = "http", value_column = 'http.status')
   output$http_map_table_detail  <- renderDT_maptable_detail(event_data = http_data, event_type = "http")
   output$http_map.value.1   <- renderValueBox_mapvalue(event_data = http_data, event_type = "http", value_column = 'http.hostname', opp = 'unique_count', icon_name = "question-circle",label = 'HTTP Hosts')
   output$http_map.value.2   <- renderValueBox_mapvalue(event_data = http_data, event_type = "http", value_column = 'http.http_user_agent', opp = 'unique_count' ,icon_name = "reply")
   output$http_map.value.3   <- renderValueBox_mapvalue(event_data = http_data, event_type = "http", value_column = 'http.length', opp = 'sum' ,icon_name = "reply", label = 'Total Bytes')
   output$http_map.value.4   <- renderValueBox_mapvalue(event_data = http_data, event_type = "http", value_column = 'http.length', opp = 'max' ,icon_name = "reply")
   
-  
   # Flow
   
   flow_data <- eventData(event_stream, max_age_secs, event_type = "flow")
   
   # Flow Dashboard
-  output$flow.rate <- renderValueBox_rate( event_type = "flow", event_data = flow_data)
-  output$flow.destinations <- renderValueBox_destinations(event_stream = event_stream, event_type = "flow")
-  output$flow.requests <- renderValueBox_requests(event_stream = event_stream, event_type = "flow")
-  output$flow.bytes <- renderValueBox_requests(event_stream = event_stream, event_type = "flow")
-  output$flow.report_period <- renderText_report_period(event_data = flow_data, event_type = "flow")
+  output$flow.rate <- renderValueBox_rate(event_stream = event_stream, event_type = "flow")
+  output$flow.destinations <- renderValueBox_value_count(value_column = 'dest_ip', icon_desc = 'desktop', event_data = flow_data , event_type = "flow")
+  # output$flow.requests <- renderValueBox_requests(event_data = flow_data, event_type = "flow")
+  output$flow.requests <- output$flow.bytes <- renderValueBox_value_sum(event_data = flow_data, event_type = "flow", value_column = 'event_type', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), icon_desc = 'desktop')
+  
+  output$flow.report_period <- renderText_report_period()
   output$flow.destination.bubbleplot <- renderBubbles_destination(event_data = flow_data, event_type = "flow", value_column = 'dest_country_name')
-  output$flow.destination.table <- renderTable_dest_ip(event_data = flow_data, event_type = "flow")
+  output$flow.destination.table <- renderTable_value(event_data = flow_data, event_type = "flow", value_column = 'dest_ip')
   
   # Flow Table
   output$flow.table <- renderDT_table(event_data = flow_data, event_type = "flow")
@@ -431,7 +431,7 @@ print(output_type)
   # Flow Map
   output$flow_map_leaflet <- renderLeaflet_map_destination(event_data = flow_data, event_type = "flow", color_column = 'app_proto')
   observeEvent_map_button(event_type = "flow", leafletId = "_map_leaflet", buttonId = "_zoom_all_button")
-  output$flow_map_table_summary <- renderTable_maptable_summary(event_data = flow_data, event_type = "flow", value_column = 'app_proto')
+  output$flow_map_table_summary <- renderTable_value(event_data = flow_data, event_type = "flow", value_column = 'app_proto')
   output$flow_map_table_detail  <- renderDT_maptable_detail(event_data = flow_data, event_type = "flow")
   output$flow_map.value.1   <- renderValueBox_mapvalue(event_data = flow_data, event_type = "flow", value_column = 'flow.bytes_toclient', opp = 'sum', icon_name = "reply", label = 'Bytes to Client')
   output$flow_map.value.2   <- renderValueBox_mapvalue(event_data = flow_data, event_type = "flow", value_column = 'flow.bytes_toserver', opp = 'sum' ,icon_name = "question-circle",label = 'Bytes to Server')
@@ -444,13 +444,14 @@ print(output_type)
   netflow_data <- eventData(event_stream, max_age_secs, event_type = "netflow")
   
   # NetFlow Dashboard
-  output$netflow.rate <- renderValueBox_rate( event_type = "netflow", event_data = netflow_data)
-  output$netflow.destinations <- renderValueBox_destinations(event_stream = event_stream, event_type = "netflow")
-  output$netflow.requests <- renderValueBox_requests(event_stream = event_stream, event_type = "netflow")
-  output$netflow.bytes <- renderValueBox_requests(event_stream = event_stream, event_type = "netflow")
-  output$netflow.report_period <- renderText_report_period(event_data = netflow_data, event_type = "netflow")
+  output$netflow.rate <- renderValueBox_rate(event_stream = event_stream, event_type = "netflow")
+  output$netflow.destinations <- renderValueBox_value_count(value_column = 'dest_ip', icon_desc = 'desktop', event_data = netflow_data , event_type = "netflow")
+  # output$netflow.requests <- renderValueBox_requests(event_data = netflow_data, event_type = "flow")
+  output$netflow.requests <- output$netflow.bytes <- renderValueBox_value_sum(event_data = netflow_data, event_type = "netflow", value_column = 'event_type', measure_column = c('netflow.bytes'), icon_desc = 'desktop')
+  
+  output$netflow.report_period <- renderText_report_period()
   output$netflow.destination.bubbleplot <- renderBubbles_destination(event_data = netflow_data, event_type = "netflow", value_column = 'dest_country_name')
-  output$netflow.destination.table <- renderTable_dest_ip(event_data = netflow_data, event_type = "netflow")
+  output$netflow.destination.table <- renderTable_value(event_data = netflow_data, event_type = "netflow", value_column = 'dest_ip')
   
   # NetFlow Table
   output$netflow.table <- renderDT_table(event_data = netflow_data, event_type = "netflow")
@@ -459,7 +460,7 @@ print(output_type)
   # NetFlow Map
   output$netflow_map_leaflet <- renderLeaflet_map_destination(event_data = netflow_data, event_type = "netflow", color_column = 'app_proto')
   observeEvent_map_button(event_type = "netflow", leafletId = "_map_leaflet", buttonId = "_zoom_all_button")
-  output$netflow_map_table_summary <- renderTable_maptable_summary(event_data = netflow_data, event_type = "netflow", value_column = 'app_proto')
+  output$netflow_map_table_summary <- renderTable_value(event_data = netflow_data, event_type = "netflow", value_column = 'app_proto')
   output$netflow_map_table_detail  <- renderDT_maptable_detail(event_data = netflow_data, event_type = "netflow")
   output$netflow_map.value.1   <- renderValueBox_mapvalue(event_data = netflow_data, event_type = "netflow", value_column = 'netflow.bytes', opp = 'sum', icon_name = "reply", label = 'Bytes')
   output$netflow_map.value.2   <- renderValueBox_mapvalue(event_data = netflow_data, event_type = "netflow", value_column = 'netflow.pkts', opp = 'sum' ,icon_name = "question-circle",label = 'Packets')
@@ -471,13 +472,13 @@ print(output_type)
   alert_data <- eventData(event_stream, max_age_secs, event_type = "alert")
   
   # Alert Dashboard
-  output$alert.rate <- renderValueBox_rate( event_type = "alert", event_data = alert_data)
-  output$alert.destinations <- renderValueBox_destinations(event_stream = event_stream, event_type = "alert")
-  output$alert.requests <- renderValueBox_requests(event_stream = event_stream, event_type = "alert")
-  output$alert.bytes <- renderValueBox_requests(event_stream = event_stream, event_type = "alert")
-  output$alert.report_period <- renderText_report_period(event_data = alert_data, event_type = "alert")
+  output$alert.rate <- renderValueBox_rate(event_stream = event_stream, event_type = "alert")
+  output$alert.destinations <- renderValueBox_value_count(value_column = 'dest_ip', icon_desc = 'desktop', event_data = alert_data , event_type = "alert")
+  output$alert.requests <- renderValueBox_requests(event_data = alert_data, event_type = "alert")
+  output$alert.bytes <- renderValueBox_value_sum(event_data = alert_data, event_type = "alert", value_column = 'event_type', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), icon_desc = 'desktop')
+  output$alert.report_period <- renderText_report_period()
   output$alert.destination.bubbleplot <- renderBubbles_destination(event_data = alert_data, event_type = "alert", value_column = 'dest_country_name')
-  output$alert.destination.table <- renderTable_dest_ip(event_data = alert_data, event_type = "alert")
+  output$alert.destination.table <- renderTable_value(event_data = alert_data, event_type = "alert", value_column = 'dest_ip')
   
   # Alert Table
   output$alert.table <- renderDT_table(event_data = alert_data, event_type = "alert")
@@ -486,7 +487,7 @@ print(output_type)
   # Alert Map
   output$alert_map_leaflet <- renderLeaflet_map_destination(event_data = alert_data, event_type = "alert", color_column = 'alert.severity', group_by_src = TRUE)
   observeEvent_map_button(event_type = "alert", leafletId = "_map_leaflet", buttonId = "_zoom_all_button")
-  output$alert_map_table_summary <- renderTable_maptable_summary(event_data = alert_data, event_type = "alert", value_column = 'alert.category')
+  output$alert_map_table_summary <- renderTable_value(event_data = alert_data, event_type = "alert", value_column = 'alert.category')
   output$alert_map_table_detail  <- renderDT_maptable_detail(event_data = alert_data, event_type = "alert")
   output$alert_map.value.1   <- renderValueBox_mapvalue(event_data = alert_data, event_type = "alert", value_column = 'alert.severity', value = '3' ,  opp = 'count', icon_name = "reply", label = 'Notice')
   output$alert_map.value.2   <- renderValueBox_mapvalue(event_data = alert_data, event_type = "alert", value_column = 'alert.severity', value = '2' ,  opp = 'count', icon_name = "reply", label = 'Warning')
@@ -499,13 +500,13 @@ print(output_type)
   drop_data <- eventData(event_stream, max_age_secs, event_type = "drop")
   
   # Drop Dashboard
-  output$drop.rate <- renderValueBox_rate( event_type = "drop", event_data = drop_data)
-  output$drop.destinations <- renderValueBox_destinations(event_stream = event_stream, event_type = "drop")
-  output$drop.requests <- renderValueBox_requests(event_stream = event_stream, event_type = "drop")
-  output$drop.bytes <- renderValueBox_requests(event_stream = event_stream, event_type = "drop")
-  output$drop.report_period <- renderText_report_period(event_data = drop_data, event_type = "drop")
+  output$drop.rate <- renderValueBox_rate(event_stream = event_stream, event_type = "drop")
+  output$drop.destinations <- renderValueBox_value_count(value_column = 'dest_ip', icon_desc = 'desktop', event_data = drop_data , event_type = "drop")
+  output$drop.requests <- renderValueBox_requests(event_data = drop_data, event_type = "drop")
+  output$drop.bytes <- renderValueBox_value_sum(event_data = drop_data, event_type = "drop", value_column = 'event_type', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), icon_desc = 'desktop')
+  output$drop.report_period <- renderText_report_period()
   output$drop.destination.bubbleplot <- renderBubbles_destination(event_data = drop_data, event_type = "drop", value_column = 'dest_country_name')
-  output$drop.destination.table <- renderTable_dest_ip(event_data = drop_data, event_type = "drop")
+  output$drop.destination.table <- renderTable_value(event_data = drop_data, event_type = "drop", value_column = 'dest_ip')
   
   # Drop Table
   output$drop.table <- renderDT_table(event_data = drop_data, event_type = "drop")
@@ -514,7 +515,7 @@ print(output_type)
   # Drop Map
   output$drop_map_leaflet <- renderLeaflet_map_destination(event_data = drop_data, event_type = "drop", color_column = 'app_proto')
   observeEvent_map_button(event_type = "drop", leafletId = "_map_leaflet", buttonId = "_zoom_all_button")
-  output$drop_map_table_summary <- renderTable_maptable_summary(event_data = drop_data, event_type = "drop", value_column = 'app_proto')
+  output$drop_map_table_summary <- renderTable_value(event_data = drop_data, event_type = "drop", value_column = 'app_proto')
   output$drop_map_table_detail  <- renderDT_maptable_detail(event_data = drop_data, event_type = "drop")
   output$drop_map.value.1   <- renderValueBox_mapvalue(event_data = drop_data, event_type = "drop", value_column = 'flow.bytes_toclient', opp = 'sum', icon_name = "reply", label = 'Bytes to Client')
   output$drop_map.value.2   <- renderValueBox_mapvalue(event_data = drop_data, event_type = "drop", value_column = 'flow.bytes_toserver', opp = 'sum' ,icon_name = "question-circle",label = 'Bytes to Server')
@@ -527,13 +528,13 @@ print(output_type)
   tls_data <- eventData(event_stream, max_age_secs, event_type = "tls")
   
   # TLS Dashboard
-  output$tls.rate <- renderValueBox_rate( event_type = "tls", event_data = tls_data)
-  output$tls.destinations <- renderValueBox_destinations(event_stream = event_stream, event_type = "tls")
-  output$tls.requests <- renderValueBox_requests(event_stream = event_stream, event_type = "tls")
-  output$tls.bytes <- renderValueBox_requests(event_stream = event_stream, event_type = "tls")
-  output$tls.report_period <- renderText_report_period(event_data = tls_data, event_type = "tls")
+  output$tls.rate <- renderValueBox_rate(event_stream = event_stream, event_type = "tls")
+  output$tls.destinations <- renderValueBox_value_count(value_column = 'dest_ip', icon_desc = 'desktop', event_data = tls_data, event_type = "tls")
+  output$tls.requests <- renderValueBox_requests(event_data = tls_data, event_type = "tls")
+  output$tls.bytes <- renderValueBox_value_sum(event_data = tls_data, event_type = "tls", value_column = 'event_type', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), icon_desc = 'desktop')
+  output$tls.report_period <- renderText_report_period()
   output$tls.destination.bubbleplot <- renderBubbles_destination(event_data = tls_data, event_type = "tls", value_column = 'dest_country_name')
-  output$tls.destination.table <- renderTable_dest_ip(event_data = tls_data, event_type = "tls")
+  output$tls.destination.table <- renderTable_value(event_data = tls_data, event_type = "tls", value_column = 'dest_ip')
   
   # TLS Table
   output$tls.table <- renderDT_table(event_data = tls_data, event_type = "tls")
@@ -542,7 +543,8 @@ print(output_type)
   # TLS Map
   output$tls_map_leaflet <- renderLeaflet_map_destination(event_data = tls_data, event_type = "tls", color_column = 'tls.version')
   observeEvent_map_button(event_type = "tls", leafletId = "_map_leaflet", buttonId = "_zoom_all_button")
-  output$tls_map_table_summary <- renderTable_maptable_summary(event_data = tls_data, event_type = "tls", value_column = 'tls.version')
+  output$tls_map_table_summary <- renderTable_value(event_data = tls_data, event_type = "tls", value_column = 'tls.version')
+  
   output$tls_map_table_detail  <- renderDT_maptable_detail(event_data = tls_data, event_type = "tls")
   output$tls_map.value.1   <- renderValueBox_mapvalue(event_data = tls_data, event_type = "tls", value_column = 'tls.sni', opp = 'count', icon_name = "reply", label = 'TLS Requests')
   output$tls_map.value.2   <- renderValueBox_mapvalue(event_data = tls_data, event_type = "tls", value_column = 'tls.sni', opp = 'unique_count' ,icon_name = "question-circle",label = 'TLS Hosts')

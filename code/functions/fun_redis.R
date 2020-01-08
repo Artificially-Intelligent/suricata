@@ -8,7 +8,7 @@ safe_redis <- function(host = redis_host) {
     print(paste(Sys.time() ,'Error- Unavailable redist host:',host ))
     redis_conn <- NULL
   }
-
+  
   if(exists('redis_conn')){
     tryCatch({
       redis_conn$PING()
@@ -41,6 +41,8 @@ safe_redis <- function(host = redis_host) {
   if(vaild_connection){
     return(redis_conn)
   }else{
+    print(paste(Sys.time() ,'Error - unable to establish redis connection to:',host ))
+    
     return(NULL)
   }
 }
@@ -161,19 +163,21 @@ get_redis_list <- function(host = redis_host,
   
   new_lines <- NULL
   
-  if (redux::redis_available(host = host) ||  index_end > 0 || index_load_end - index_load_start > 0){
+  if (redux::redis_available(host = host) && index_load_end - index_load_start > 0){
     tryCatch(
       {
         {
           new_json <- redis_conn$LRANGE(key=key,as.integer(index_load_start),as.integer(index_load_end)) 
-          
-          new_lines <- fromJSON(paste('[', paste(new_json,collapse = ','),']')) %>%
-            mutate(timestamp = as_datetime(timestamp)) %>%
-            filter(timestamp >= timestamp_last_loaded) %>%
-            mutate(timestamp_num = as.numeric(timestamp - round(unclass(timestamp)))) 
-          
-          index_last_loaded <- index_load_end
-          
+          if(length(new_json) == 0){
+            print(paste(now(), 'Error - redis query returned no data'))
+          }else{
+            new_lines <- fromJSON(paste('[', paste(new_json,collapse = ','),']')) %>%
+              mutate(timestamp = as_datetime(timestamp)) %>%
+              filter(timestamp >= timestamp_last_loaded) %>%
+              mutate(timestamp_num = as.numeric(timestamp - round(unclass(timestamp)))) 
+            
+            index_last_loaded <- index_load_end
+          }
           #  new_lines <- new_json %>%
           #           lapply(function(x){
           #              parsed_json <- jsonlite::fromJSON(x)
