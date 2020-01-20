@@ -63,17 +63,16 @@
 # }
 
 # output$event.rate <- 
-renderValueBox_rate <- function(event_stream = event_stream, event_type = "all"){
-  event_count <- latestRequestCount(event_stream, event_type)
-  
+renderValueBox_rate <- function(event_data = all_data, event_type = "all"){
+  # event_count <- latestRequestCount(event_stream, event_type)
   renderValueBox({
+    event_count <- requestCount(event_data, event_type)
     
     # The downloadRate is the number of rows in event_data since
     # either first_timestamp or max_age_secs ago, whichever is later.
-    
-    elapsed <- round( difftime(last_timestamp(), first_timestamp(), units="secs"),1)
+    elapsed <- round( difftime(last_timestamp(event_data), first_timestamp(event_data), units="secs"),1)
     interval <- min(max_age_secs, elapsed)
-    download_rate <- event_count() / interval
+    download_rate <- event_count / interval
     
     if(interval < 120){
       label <- paste( event_type , "request per sec (last",interval, "sec)")
@@ -96,7 +95,7 @@ renderValueBox_rate <- function(event_stream = event_stream, event_type = "all")
 
 
 # output$event.destinations <-
-renderValueBox_value_count <- function(event_data = event_data, event_type = "all", value_column = 'dest_ip', icon_desc = 'desktop'){
+renderValueBox_value_count <- function(event_data = all_data, event_type = "all", value_column = 'dest_ip', icon_desc = 'desktop'){
   # destinationCount(event_stream, event_type)
   renderValueBox({
     unique_value_count <- nrow(valueCount(event_data = event_data, event_type = event_type, value_column = value_column)) 
@@ -128,11 +127,11 @@ renderValueBox_value_count <- function(event_data = event_data, event_type = "al
 #   )
 #   )
 
-renderValueBox_value_sum <- function(event_data = event_data, event_type = "all", value_column = 'dest_ip', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), icon_desc = 'desktop'){
+renderValueBox_value_agg <- function(event_data = all_data, event_type = "all", value_column = 'dest_ip', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), icon_desc = 'desktop' , agg_function = 'sum'){
   # destinationCount(event_stream, event_type)
   renderValueBox({
-    value_sum <- valueSum(event_data = event_data, event_type = event_type, value_column = value_column, measure_column = measure_column) 
-    value_sum[is.na(value_sum)] <- 0
+    value_sum <- valueAgg(event_data = event_data, event_type = event_type, value_column = value_column, measure_column = measure_column, agg_function = agg_function) 
+    
     total_sum <- sum(value_sum[,2:length(value_sum)]) %>% 
       comprss()
     label <- paste(simple_cap(str_replace_all(str_replace_all( paste(collapse = ' + ', measure_column),'_', ' '),"\\.", ' ')))
@@ -145,7 +144,7 @@ renderValueBox_value_sum <- function(event_data = event_data, event_type = "all"
 }
 
 # output$event.requests <- 
-renderValueBox_requests <- function(event_data = event_data,  event_type = "all"){
+renderValueBox_requests <- function(event_data = all_data,  event_type = "all"){
   
   renderValueBox({
     request_count <- requestCount(event_data,event_type)
@@ -171,9 +170,9 @@ renderValueBox_bytes <- function(event_stream = event_stream, event_type = "all"
 }
 
 # output$event.report_period_text <- 
-renderText_report_period_text <- function(){
+renderText_report_period_text <- function(event_data = all_data){
   renderText({
-    time_period <- last_timestamp()  - first_timestamp()
+    time_period <- last_timestamp(event_data)  - first_timestamp(event_data)
     period_text <- format(round(time_period,2))
     
     # time_period <- event_data()  %>%
@@ -185,9 +184,9 @@ renderText_report_period_text <- function(){
 }
 
 # output$event.report_period <- 
-renderText_report_period <- function(){
+renderText_report_period <- function(event_data = all_data){
   renderValueBox({
-    time_period <- last_timestamp()  - first_timestamp()
+    time_period <- last_timestamp(event_data)  - first_timestamp(event_data)
     period_text <- format(round(time_period,2))
     
     # time_period <- event_data()  %>%
@@ -290,6 +289,66 @@ downloadHandler_csv <- function(event_data = all_data, event_type = "all"){
     },
     contentType = "text/csv"
   )
+}
+
+
+# output$event.app_proto_server_bytes.barplot <- 
+renderPlotly_value.barplot <-  function(event_data = all_data, event_type = "all", value_column = 'app_proto', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), agg_function = 'sum'){
+  renderPlotly({
+    
+    if(! is.null(input$flow.value_picker))
+      value_column <- input$flow.value_picker
+    if(! is.null(input$flow.measure_picker))
+      measure_column <- input$flow.measure_picker
+    
+    
+    df <- valueAgg(event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column), measure_column = measure_column, agg_function = agg_function)
+
+    if (nrow(df) == 0)
+      return()
+    
+    ylab <- simple_cap(paste(agg_function, str_replace_all(str_replace_all( paste(collapse = ' + ', measure_column),'_', ' '),"\\.", ' ')))
+    xlab <- 'Time'
+    serieslab <- simple_cap(paste(str_replace_all(str_replace_all( paste(collapse = ' + ', value_column),'_', ' '),"\\.", ' ')))
+    
+    
+    unit = 'minutes'
+    if(difftime(last_timestamp(event_data), first_timestamp(event_data), units="secs") < 600)
+      unit = 'seconds'
+    
+    df$time <- df$timestamp %>% 
+      as_datetime(tz = Sys.timezone(location = TRUE)) %>% 
+      floor_date(unit = unit)
+    
+    df$measure <- rowSums(df[,measure_column]) 
+    
+    fill_by <- sym(value_column)
+    
+    df <- df %>%
+      group_by_at(c('time',value_column)) %>%
+      summarise(measure = sum(measure))
+    
+    # names(df)[names(df) == value_column[1]] <- 'value_column'
+    
+    p <- df %>%
+      #group_by(time,app_proto) %>%
+      #summarise("Mbps" = round(sum(flow.bytes_toserver)/131072,),3) %>%
+      ggplot( aes(x=time, y=measure
+                  , fill= !!fill_by ,order= measure )) +
+      
+      #  geom_area(alpha=0.5) +
+      # ylab(ylab) + xlab(xlab) +
+      labs(fill = serieslab, x = xlab, y = ylab) +
+      geom_bar(stat = "identity") +
+    # geom_col() +
+      theme_ipsum() +
+      theme(legend.position = "bottom") +
+      scale_y_continuous(labels = scales::comma) +
+      #scale_fill_manual(values=colour_pallets$cbPalette)
+       scale_fill_brewer(palette="Spectral")
+      # scale_fill_brewer(palette="Set1")
+    p
+  })
 }
 
 # output$event.app_proto_server_bytes.barplot <- 

@@ -245,7 +245,26 @@ format_redis_to_df <- function(new_lines = new_lines,
     if(length(missing)>0){formatted_lines[missing] <- NA }
     
     print(paste(Sys.time() ,"last timestamp:",formatted_lines[nrow(formatted_lines),]$timestamp))
+
     
+    formatted_lines[is.na(formatted_lines$netflow.start),'netflow.start'] <- ""
+    formatted_lines[is.na(formatted_lines$netflow.end),'netflow.end'] <- ""
+    
+    formatted_lines$netflow.start <- as_datetime(formatted_lines$netflow.start)
+    formatted_lines$netflow.end <- as_datetime(formatted_lines$netflow.end)
+    formatted_lines$netflow.duration <- as.numeric(difftime(formatted_lines$netflow.end, formatted_lines$netflow.start, units = c("secs")))
+    formatted_lines$netflow.avg_response_time <- formatted_lines$netflow.duration / formatted_lines$netflow.pkts
+
+    formatted_lines[is.na(formatted_lines$flow.start),'flow.start'] <- ""
+    formatted_lines[is.na(formatted_lines$flow.end),'flow.end'] <- ""
+    
+    formatted_lines$flow.start <- as_datetime(formatted_lines$flow.start)
+    formatted_lines$flow.end <- as_datetime(formatted_lines$flow.end)
+    formatted_lines$flow.duration <- as.numeric(difftime(formatted_lines$flow.end, formatted_lines$flow.start, units = c("secs")))
+    formatted_lines$flow.avg_response_time <- formatted_lines$flow.duration / formatted_lines$flow.pkts_toclient
+
+    difftime(formatted_lines$flow.end, formatted_lines$flow.start, units = c("secs"))
+        
     # Return result values for columns in data_row_template in a desired order 
     return(formatted_lines[names(data_row_template)])
 }
@@ -269,7 +288,7 @@ load_history_from_rds <- function(path = history_folder,hours_to_load = 9){
 
 data_row_template <- data.frame(
   timestamp = as_datetime(x = integer(0)),
-  timestamp_num = numeric(), 
+  # timestamp_num = numeric(), 
   flow_id = character(),
   in_iface = character(),
   event_type = character(),
@@ -298,8 +317,7 @@ data_row_template <- data.frame(
   packet = character(),
   icmp_type = character(),
   icmp_code = character(),
-  app_proto_ts = character(), 
-  timestamp_num = numeric(),
+  app_proto_ts = character(),
   
   dns.type = character(),
   dns.id = character(),
@@ -381,17 +399,21 @@ data_row_template <- data.frame(
   flow.pkts_toclient = numeric(),
   flow.bytes_toserver = numeric(),
   flow.bytes_toclient = numeric(),
-  flow.start = character(),
   packet_info.linktype = character(),
-  flow.end = character(), 
+  flow.start = as_datetime(x = integer(0)),
+  flow.end = as_datetime(x = integer(0)),
+  flow.duration = numeric(),
+  flow.avg_response_time = numeric(),
   flow.age = character(), 
   flow.state = character(), 
   flow.reason = character(), 
   flow.alerted = character(), 
   netflow.pkts = numeric(),
   netflow.bytes = numeric(),
-  netflow.start = numeric(),
-  netflow.end = character(), 
+  netflow.start = as_datetime(x = integer(0)),
+  netflow.end = as_datetime(x = integer(0)),
+  netflow.duration = numeric(),
+  netflow.avg_response_time = numeric(),
   netflow.age = numeric(),
   netflow.min_ttl = numeric(),
   netflow.max_ttl = numeric(),
@@ -433,4 +455,4 @@ data_row_template <- data.frame(
   ikev2.alg_dh = character(),
   ikev2.alg_esn = character()
 )
-
+# dhcp.client_ip,dhcp.relay_ip,dhcp.next_server_ip,dhcp.lease_time,dhcp.subnet_mask,dhcp.routers,dhcp.dns_servers"

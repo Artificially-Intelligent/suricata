@@ -10,6 +10,8 @@ data_load_status <- reactiveValues(
   redis_timestamp_last_loaded = 0
 )
 
+redis_conn <- safe_redis(host = redis_host)
+
 alertStream <- function(session) {
   redis_conn <- safe_redis(host = redis_host) 
   # redis_conn$PING()
@@ -118,8 +120,8 @@ eventData <- function(alrtStream, timeWindow, event_type = '') {
   }, data_row_template)
 }
 
-# Count the total nrows of alrtStream
-requestCount <- function(event_data = event_data, event_type = "") {
+# Count the total nrows of event_data
+requestCount <- function(event_data = all_data, event_type = "") {
     if(event_type == '' || event_type == 'all')
       event_type <- event_types
 
@@ -148,39 +150,39 @@ latestRequestCount <- function(alrtStream, event_type = "") {
 }
 
 
-
-httpSuccessCount <- function(alrtStream){
-  shinySignals::reducePast(alrtStream, function(memo, df) {
-    if (is.null(df))
-      return(memo)
-    
-    http_status_success <- df %>% 
-      filter((round(as.numeric(http.status)/100,1) == 2),
-             event_type == 'http') %>%
-      nrow()
-    memo + http_status_success
-  }, 0)
-}
+# 
+# httpSuccessCount <- function(alrtStream){
+#   shinySignals::reducePast(alrtStream, function(memo, df) {
+#     if (is.null(df))
+#       return(memo)
+#     
+#     http_status_success <- df %>% 
+#       filter((round(as.numeric(http.status)/100,1) == 2),
+#              event_type == 'http') %>%
+#       nrow()
+#     memo + http_status_success
+#   }, 0)
+# }
 
 # Count the total nrows of distinct alrtStream$dest_ip
-destinationCount <- function(alrtStream, event_type = "") {
-  shinySignals::reducePast(alrtStream, function(memo, df, e_type = event_type) {
-    if (is.null(df))
-      return(memo)
-    
-    if(e_type == '' || e_type == 'all')
-      e_type <- event_types
-    
-    memo + (df %>% 
-              filter(event_type %in% e_type) %>% 
-              group_by(dest_ip) %>% 
-              summarise() %>% 
-              nrow()
-    )
-  }, 0)
-}
+# destinationCount <- function(alrtStream, event_type = "") {
+#   shinySignals::reducePast(alrtStream, function(memo, df, e_type = event_type) {
+#     if (is.null(df))
+#       return(memo)
+#     
+#     if(e_type == '' || e_type == 'all')
+#       e_type <- event_types
+#     
+#     memo + (df %>% 
+#               filter(event_type %in% e_type) %>% 
+#               group_by(dest_ip) %>% 
+#               summarise() %>% 
+#               nrow()
+#     )
+#   }, 0)
+# }
 
-valueCount <- function(event_data = event_data, event_type = event_type, value_column = value_column){
+valueCount <- function(event_data = all_data, event_type = event_type, value_column = value_column){
   
   if(event_type == '' || event_type == 'all')
     event_type <- event_types
@@ -201,21 +203,23 @@ valueCount <- function(event_data = event_data, event_type = event_type, value_c
   df
 }
 
-valueSum <- function(event_data = event_data, event_type = event_type, value_column = value_column, measure_column = measure_column){
+valueAgg <- function(event_data = all_data, event_type = event_type, value_column = value_column, measure_column = measure_column, agg_function = agg_function){
   
   if(event_type == '' || event_type == 'all')
     event_type <- event_types
   
-  if (nrow(event_data()) == 0)
+  df <- event_data()
+  
+  if (nrow(df) == 0)
     return()
    
-  df <- event_data()
-  length(measure_column)
+  
+  # length(measure_column)
   # for(measure in measure_column){
   #   measure
   # }
  
-  df$value_column <- df[,value_column]
+  # df$value_column <- df[,value_column[1]]
   
   df$measure_column <- df[,measure_column[1]]
   if(length(measure_column) >= 2){
@@ -235,52 +239,45 @@ valueSum <- function(event_data = event_data, event_type = event_type, value_col
   }
   df <- df %>%
     filter(event_type %in% event_type) %>% 
-    group_by(value_column) %>%
+    group_by_at(value_column) %>%
     summarise(measure_column = sum(measure_column)
               ,measure_column2 = sum(measure_column2)
               ,measure_column3 = sum(measure_column3)
               ,measure_column4 = sum(measure_column4)
-              ) %>%
-    arrange(desc(measure_column), tolower(value_column))
-  df <- df[,1:(length(measure_column)+ 1)]
+              ) %>% 
+    filter_at(value_column, all_vars(!is.na(.)) ) %>%
+    replace(is.na(.), 0) %>%
+    arrange_at(value_column) %>%
+    arrange(desc(measure_column))
+    
+  df <- df[,1:(length(value_column) + length(measure_column))]
   colnames(df) <- c(value_column, measure_column)
+
   df
 }
 
 # Count the total nrows of distinct alrtStream$dest_ip
-firstTimestamp <- function(alrtStream, event_type = '') {
-  shinySignals::reducePast(alrtStream, function(memo, df, e_type = event_type) {
-    if (is.null(df))
-      return(memo)
-    
-    if(e_type == '' || e_type == 'all')
-      e_type <- event_types
-    
-    if(nrow(df) == 0)
-      return(memo)
-    (df %>%
-        filter(event_type %in% e_type) %>% 
-        summarise(timestamp = min(timestamp))
-    )[[1]]
-  }, 0)
+first_timestamp <- firstTimestamp <- function(event_data = all_data, event_type = '') {
+  if(event_type == '' || event_type == 'all')
+    return((event_data() %>%
+       summarise(timestamp = min(timestamp)))$timestamp
+    )
+
+  (event_data() %>%
+    filter(event_type %in% event_type) %>% 
+    summarise(timestamp = min(timestamp)))$timestamp
 }
 
 # Count the total nrows of distinct alrtStream$dest_ip
-lastTimestamp <- function(alrtStream, event_type = '') {
-  shinySignals::reducePast(alrtStream, function(memo, df, e_type = event_type) {
-    if (is.null(df))
-      return(memo)
-    
-    if(e_type == '' || e_type == 'all')
-      e_type <- event_types
-    
-    if(nrow(df) == 0)
-      return(memo)
-    (df %>%
-        filter(event_type %in% e_type) %>% 
-        summarise(timestamp = max(timestamp))
-    )[[1]]
-  }, 0)
+last_timestamp <- lastTimestamp <- function(event_data = all_data, event_type = '') {
+  if(event_type == '' || event_type == 'all')
+    return((event_data() %>%
+       summarise(timestamp = max(timestamp)))$timestamp
+    )
+  
+  (event_data() %>%
+      filter(event_type %in% event_type) %>% 
+      summarise(timestamp = max(timestamp)))$timestamp
 }
 
 # Count the total nrows of distinct alrtStream.dest_ip

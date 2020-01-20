@@ -109,6 +109,77 @@ tabItem_table <- function(event = "all") {
   )
 }
 
+
+####--UI Timeseries--------------------------------------------------------------------------------------------
+
+
+tabItem_timeseries <- function(event = "all") {
+  tab_name <- paste(event,"_timeseries",sep="")
+  if( event == "all"){
+    event_type <- "event"  
+  }else{
+    event_type <- event
+  } 
+  tab_title <- simple_cap(paste(event_type ,  'Timeseries'))
+  plotly_outputId <- paste(event,".plotly",sep="")
+  measure_picker_inputId <- paste(event,".measure_picker",sep="")
+  value_picker_inputId <- paste(event,".value_picker",sep="")
+  download_csv_outputId <- paste(event,".download_timeseries_csv",sep="")
+  
+  tabItem(tabName = tab_name,
+          # fluidRow(width = "100%",
+          #          column(
+          #            width = 6,h2(icon("table"), HTML("&nbsp;"),tab_title)
+          #          )
+          # ),
+          fluidRow(
+            pickerInput(
+              inputId = value_picker_inputId,
+              label = "Value Column", 
+              choices = c(colnames(data_row_template)[4:21],
+                          colnames(select(
+                            data_row_template[!unlist(lapply(data_row_template,is.numeric))]
+                            , matches(paste0("^(", paste(event, collapse="|"), ")"))))
+              ),
+              options = list(
+                `live-search` = TRUE)
+            )
+            ,pickerInput(
+              inputId = measure_picker_inputId,
+              label = "Measure", 
+              choices = c(colnames(select(
+                            data_row_template[unlist(lapply(data_row_template,is.numeric))]
+                            , matches(paste0("^(", paste(event, collapse="|"), ")")))
+                          )
+                          ,'count'),
+              options = list(
+                `live-search` = TRUE)
+            ),
+            box(
+              width = 12, status = "info", solidHeader = TRUE,
+              title = tab_title,
+              fluidRow(
+                plotlyOutput(
+                  plotly_outputId, 
+                  # width = "100%", height = 350
+                )
+              )
+            )
+          ),
+          fluidRow(
+            column(
+              width = 3,
+              #offset = 9,
+              downloadButton(download_csv_outputId, "Download as CSV")
+            )
+          )
+          
+  )
+}
+
+####--UI MAP--------------------------------------------------------------------------------------------
+
+
 tabItem_map <- function(event = "all") {
   tab_name <- paste(event,"_map",sep="")
   leaflet_outputId <- paste(tab_name, "_leaflet",sep="")

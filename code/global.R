@@ -88,7 +88,12 @@
               'dns',
               'fileinfo',
               'http',
-              'tls')
+              'tls',
+              'ikev2')
+  
+  colour_pallets = list()
+  colour_pallets$cbPalette <- c("#999999", "#E69F00", "#56B4E9", "#009E73", "#F0E442", "#0072B2", "#D55E00", "#CC79A7")
+  
   
   if(!file.exists(iplookup_db_file))
     print("could no locate ip lookup DB file")
@@ -134,4 +139,4 @@
   # source('ui/ui_alert.R')
   print(paste("global.R finished"))
   
-  
+  redis_conn <- safe_redis(host = redis_host)
