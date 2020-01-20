@@ -289,7 +289,7 @@ load_history_from_rds <- function(path = history_folder,hours_to_load = 9){
 data_row_template <- data.frame(
   timestamp = as_datetime(x = integer(0)),
   # timestamp_num = numeric(), 
-  flow_id = character(),
+  flow_id = numeric(),
   in_iface = character(),
   event_type = character(),
   src_ip = character(),
@@ -404,7 +404,7 @@ data_row_template <- data.frame(
   flow.end = as_datetime(x = integer(0)),
   flow.duration = numeric(),
   flow.avg_response_time = numeric(),
-  flow.age = character(), 
+  flow.age = numeric(), 
   flow.state = character(), 
   flow.reason = character(), 
   flow.alerted = character(), 

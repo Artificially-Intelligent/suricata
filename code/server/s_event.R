@@ -205,10 +205,16 @@ renderBubbles_value <- renderBubbles_destination <- function(event_data = all_da
   renderBubbles({
     
     df <- valueCount(event_data = event_data, event_type = event_type, value_column = value_column)    %>%
+      data.frame() %>%
       # Just show the top 30, otherwise it gets hard to see
-      head(30)
-    
-    bubbles(df$n, df$value_column, key = df$value_column)
+      head(20)
+
+    df[,value_column] <- as.character(df[,value_column])
+    bubbles(df$n, 
+            df[,value_column], 
+            df[,value_column]
+            )
+
   })
 }
 
@@ -301,16 +307,19 @@ renderPlotly_value.barplot <-  function(event_data = all_data, event_type = "all
     if(! is.null(input$flow.measure_picker))
       measure_column <- input$flow.measure_picker
     
+    if(measure_column == 'count'){
+      df <- valueCount(event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column))
+      colnames(df) <- c('timestamp',value_column,measure_column)
+    }else{
+      df <- valueAgg( event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column), measure_column = measure_column, agg_function = agg_function)
+    }    
     
-    df <- valueAgg(event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column), measure_column = measure_column, agg_function = agg_function)
-
     if (nrow(df) == 0)
       return()
     
     ylab <- simple_cap(paste(agg_function, str_replace_all(str_replace_all( paste(collapse = ' + ', measure_column),'_', ' '),"\\.", ' ')))
     xlab <- 'Time'
     serieslab <- simple_cap(paste(str_replace_all(str_replace_all( paste(collapse = ' + ', value_column),'_', ' '),"\\.", ' ')))
-    
     
     unit = 'minutes'
     if(difftime(last_timestamp(event_data), first_timestamp(event_data), units="secs") < 600)
@@ -339,7 +348,6 @@ renderPlotly_value.barplot <-  function(event_data = all_data, event_type = "all
       #  geom_area(alpha=0.5) +
       # ylab(ylab) + xlab(xlab) +
       labs(fill = serieslab, x = xlab, y = ylab) +
-      geom_bar(stat = "identity") +
     # geom_col() +
       theme_ipsum() +
       theme(legend.position = "bottom") +
@@ -347,6 +355,14 @@ renderPlotly_value.barplot <-  function(event_data = all_data, event_type = "all
       #scale_fill_manual(values=colour_pallets$cbPalette)
        scale_fill_brewer(palette="Spectral")
       # scale_fill_brewer(palette="Set1")
+    
+    if(input$flow.display_picker == 'bar')
+      p <- p + geom_bar(stat = "identity")
+    
+    
+    if(input$flow.display_picker == 'line')
+      p <- p + geom_line(stat = "identity")
+    
     p
   })
 }

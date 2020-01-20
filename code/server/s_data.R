@@ -192,14 +192,14 @@ valueCount <- function(event_data = all_data, event_type = event_type, value_col
     return()
   
   df <- event_data()
-  df$value_column <- df[,value_column]
-  order <- unique(df$value_column)
+  order <- unique(df[,value_column[1]])
   
   df <- df %>%
     filter(event_type %in% event_type) %>% 
-    group_by(value_column) %>%
+    group_by_at(value_column) %>%
     tally() %>%
-    arrange(desc(n), tolower(value_column))
+    arrange_at(value_column) %>%
+    arrange(desc(n))
   df
 }
 

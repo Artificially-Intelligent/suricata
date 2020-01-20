@@ -124,6 +124,7 @@ tabItem_timeseries <- function(event = "all") {
   plotly_outputId <- paste(event,".plotly",sep="")
   measure_picker_inputId <- paste(event,".measure_picker",sep="")
   value_picker_inputId <- paste(event,".value_picker",sep="")
+  display_picker_inputId <- paste(event,".display_picker",sep="")
   download_csv_outputId <- paste(event,".download_timeseries_csv",sep="")
   
   tabItem(tabName = tab_name,
@@ -133,28 +134,50 @@ tabItem_timeseries <- function(event = "all") {
           #          )
           # ),
           fluidRow(
-            pickerInput(
-              inputId = value_picker_inputId,
-              label = "Value Column", 
-              choices = c(colnames(data_row_template)[4:21],
-                          colnames(select(
-                            data_row_template[!unlist(lapply(data_row_template,is.numeric))]
-                            , matches(paste0("^(", paste(event, collapse="|"), ")"))))
-              ),
-              options = list(
-                `live-search` = TRUE)
+            column(
+              width = 4,
+              pickerInput(
+                inputId = value_picker_inputId,
+                label = "Value Column", 
+                
+                choices = c(colnames(
+                  data_row_template[,!unlist(lapply(data_row_template, is.numeric))]
+                                     )[4:15],
+                            colnames(select(
+                              data_row_template[unlist(lapply(data_row_template,is.factor))]
+                              , matches(paste0("^(", paste(event, collapse="|"), ")"))))
+                ),
+                options = list(
+                  `live-search` = TRUE)
+              )
             )
-            ,pickerInput(
-              inputId = measure_picker_inputId,
-              label = "Measure", 
-              choices = c(colnames(select(
-                            data_row_template[unlist(lapply(data_row_template,is.numeric))]
-                            , matches(paste0("^(", paste(event, collapse="|"), ")")))
-                          )
-                          ,'count'),
-              options = list(
-                `live-search` = TRUE)
-            ),
+            ,
+            column(
+              width = 4,
+              pickerInput(
+                inputId = measure_picker_inputId,
+                label = "Measure",
+                choices = c('count',
+                  colnames(select(
+                  data_row_template[unlist(lapply(data_row_template,is.numeric))]
+                  , matches(paste0("^(", paste(event, collapse="|"), ")")))
+                )),
+                options = list(
+                  `live-search` = TRUE)
+              )
+            )
+            ,
+            column(
+              width = 4,
+              pickerInput(
+                inputId = display_picker_inputId,
+                label = "Measure",
+                choices = c('line','bar'),
+                options = list(
+                  `live-search` = TRUE)
+              )
+            )
+            ,
             box(
               width = 12, status = "info", solidHeader = TRUE,
               title = tab_title,
