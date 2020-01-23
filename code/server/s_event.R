@@ -1,71 +1,11 @@
 ### EVENTS 
 
-
-
-# generate_generic_outputs <- function(event_type = 'flow', event_data = event_data ,event_stream = event_stream, max_age_secs = max_age_secs){
-#  browser()
-#   # Dashboard
-# 
-#   output[[paste('output$',event_type,'.rate', sep = '')]] <-  renderValueBox_rate( event_type = event_type, event_data = event_data)
-#   
-#   
-#   output[[paste('output$',event_type,'.destinations', sep = '')]] <- renderValueBox_destinations(event_stream = event_stream, event_type = event_type)
-#    # assign(paste('output$',event_type,'.rate', sep = ''), renderValueBox_rate( event_type = event_type, event_data = event_data))
-#    # assign(paste('output$',event_type,'.destinations', sep = ''), renderValueBox_destinations(event_stream = event_stream, event_type = event_type))
-#    assign(paste('output$',event_type,'.requests', sep = ''), renderValueBox_requests(event_stream = event_stream, event_type = event_type))
-#    assign(paste('output$',event_type,'.bytes', sep = ''), renderValueBox_requests(event_stream = event_stream, event_type = event_type))
-#    assign(paste('output$',event_type,'.report_period', sep = ''), renderText_report_period(event_data = event_data, event_type = event_type))
-#    assign(paste('output$',event_type,'.destination.bubbleplot', sep = ''), renderBubbles_destination(event_data = event_data, event_type = event_type))
-#    assign(paste('output$',event_type,'.destination.table', sep = ''), renderTable_dest_ip(event_data = event_data, event_type = event_type))
-#   
-#   # Table
-#    assign(paste('output$',event_type,'.table', sep = ''), renderDT_table(event_data = event_data, event_type = event_type))
-#    assign(paste('output$',event_type,'.download_csv', sep = ''), downloadHandler_csv(event_data = event_data, event_type = event_type))
-#   
-#   # Map
-#    assign(paste('output$',event_type,'_map_table_detail', sep = ''), renderDT_maptable_detail(event_data = event_data, event_type = event_type))
-#   #  assign(paste('output$',event_type,'_map_leaflet', sep = ''), renderLeaflet_map_destination(event_data = event_data, event_type = event_type, color_column = 'dns.type'))
-#   #  assign(paste('output$',event_type,'_map_table_summary', sep = ''), renderTable_maptable_summary(event_data = event_data, event_type = event_type, value_column = 'dns.type'))
-#   #  assign(paste('output$',event_type,'_map.value.1', sep = ''), renderValueBox_mapvalue_count(event_data = event_data, event_type = event_type, value_column = 'dns.rrname', filter_column = 'dns.type' ,filter_value = 'query', icon_name = "question-circle"))
-#   #  assign(paste('output$',event_type,'_map.value.2', sep = ''), renderValueBox_mapvalue_count(event_data = event_data, event_type = event_type, value_column = 'dns.answers',icon_name = "reply"))
-#   #  assign(paste('output$',event_type,'_map.value.3', sep = ''), renderValueBox_mapvalue_count(event_data = event_data, event_type = event_type, value_column = 'dns.rrname', unique_count =  TRUE,icon_name = "reply"))
-#   #  assign(paste('output$',event_type,'_map.value.4', sep = ''), renderValueBox_mapvalue_count(event_data = event_data, event_type = event_type, value_column = 'dns.answers', unique_count =  TRUE,icon_name = "reply"))
-# }
-
-
-# # output$event.rate <- 
-# renderValueBox_rate <- function(event_count = all_count, event_type = "all"){
-#   renderValueBox({
-#     
-#     # The downloadRate is the number of rows in event_data since
-#     # either first_timestamp or max_age_secs ago, whichever is later.
-#     
-#     elapsed <- round(difftime(Sys.time(), first_timestamp(), units="secs"),1)
-#     interval <- min(max_age_secs, elapsed)
-#     download_rate <- event_count() / interval
-#     
-#      if(interval < 120){
-#        label <- paste( event_type , "request per sec (last",interval, "sec)")
-#      }else{
-#        label <- paste( event_type , "request per sec (last",interval, "min)")
-#      }
-#     
-#     print(paste("first timestamp:",first_timestamp(),"elapsed:",interval))
-#     
-#     valueBox(
-#       value = formatC(download_rate, digits = 1, format = "f"),
-#       subtitle = label,
-#       icon = icon("area-chart")
-#       # ,
-#       # color = if (download_rate >= input$rateThreshold) "yellow" else "aqua"
-#     )
-#   })
-# }
-
 # output$event.rate <- 
-renderValueBox_rate <- function(event_data = all_data, event_type = "all"){
+renderValueBox_rate <- function(event_data = all_data, event_type = "all", tab_name_suffix = ''){
   # event_count <- latestRequestCount(event_stream, event_type)
   renderValueBox({
+    tab_name <- paste(event_type, tab_name_suffix, sep = '')
+    
     event_count <- requestCount(event_data, event_type)
     
     # The downloadRate is the number of rows in event_data since
@@ -95,9 +35,11 @@ renderValueBox_rate <- function(event_data = all_data, event_type = "all"){
 
 
 # output$event.destinations <-
-renderValueBox_value_count <- function(event_data = all_data, event_type = "all", value_column = 'dest_ip', icon_desc = 'desktop'){
+renderValueBox_value_count <- function(event_data = all_data, event_type = "all", tab_name_suffix= '', value_column = 'dest_ip', icon_desc = 'desktop'){
+  
   # destinationCount(event_stream, event_type)
   renderValueBox({
+    tab_name <- paste(event_type, tab_name_suffix, sep = '')
     unique_value_count <- nrow(valueCount(event_data = event_data, event_type = event_type, value_column = value_column)) 
     label <- paste("Unique", simple_cap(str_replace(value_column,'_', ' ')))
     valueBox(
@@ -127,9 +69,10 @@ renderValueBox_value_count <- function(event_data = all_data, event_type = "all"
 #   )
 #   )
 
-renderValueBox_value_agg <- function(event_data = all_data, event_type = "all", value_column = 'dest_ip', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), icon_desc = 'desktop' , agg_function = 'sum'){
+renderValueBox_value_agg <- function(event_data = all_data, event_type = "all", tab_name_suffix = '', value_column = 'dest_ip', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), icon_desc = 'desktop' , agg_function = 'sum'){
   # destinationCount(event_stream, event_type)
   renderValueBox({
+    tab_name <- paste(event_type, tab_name_suffix, sep = '')
     value_sum <- valueAgg(event_data = event_data, event_type = event_type, value_column = value_column, measure_column = measure_column, agg_function = agg_function) 
     
     total_sum <- sum(value_sum[,2:length(value_sum)]) %>% 
@@ -144,9 +87,10 @@ renderValueBox_value_agg <- function(event_data = all_data, event_type = "all", 
 }
 
 # output$event.requests <- 
-renderValueBox_requests <- function(event_data = all_data,  event_type = "all"){
+renderValueBox_requests <- function(event_data = all_data, tab_name_suffix= '', event_type = "all"){
   
   renderValueBox({
+    tab_name <- paste(event_type, tab_name_suffix, sep = '')
     request_count <- requestCount(event_data,event_type)
     valueBox(
       request_count,
@@ -157,9 +101,10 @@ renderValueBox_requests <- function(event_data = all_data,  event_type = "all"){
 }
 
 # output$event.bytes <- 
-renderValueBox_bytes <- function(event_stream = event_stream, event_type = "all"){
+renderValueBox_bytes <- function(event_stream = event_stream, event_type = "all", tab_name_suffix = ''){
   bytes_total <-  totalBytes(event_stream,event_type)
   renderValueBox({
+    tab_name <- paste(event_type, tab_name_suffix, sep = '')
     valueBox(
       # round(bytes_total()/(1024*1024),1),
       comprss(bytes_total()),
@@ -183,7 +128,6 @@ renderText_report_period_text <- function(event_data = all_data){
   
 }
 
-# output$event.report_period <- 
 renderText_report_period <- function(event_data = all_data){
   renderValueBox({
     time_period <- last_timestamp(event_data)  - first_timestamp(event_data)
@@ -201,9 +145,9 @@ renderText_report_period <- function(event_data = all_data){
 }
 
 # output$event.destination.bubbleplot <- output$event.dest_ip.bubbleplot <- 
-renderBubbles_value <- renderBubbles_destination <- function(event_data = all_data, event_type = "all", value_column = 'dest_ip'){
+renderBubbles_value <- renderBubbles_destination <- function(event_data = all_data, event_type = "all", tab_name_suffix = '', value_column = 'dest_ip'){
   renderBubbles({
-    
+    tab_name <- paste(event_type, tab_name_suffix, sep = '')
     df <- valueCount(event_data = event_data, event_type = event_type, value_column = value_column)    %>%
       data.frame() %>%
       # Just show the top 30, otherwise it gets hard to see
@@ -214,16 +158,21 @@ renderBubbles_value <- renderBubbles_destination <- function(event_data = all_da
             df[,value_column], 
             df[,value_column]
             )
-
   })
 }
 
 
-renderTable_value <- function(event_data = all_data, event_type = "all", value_column = 'event_type'){
+renderTable_value <- function(event_data = all_data, event_type = "all", tab_name_suffix = '', leafletId_suffix = '', value_column = 'event_type'){
+  # if(nchar(leafletId_suffix) > 0)
+  #   event_data <- leaflet_mapdata(event_data = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix, leafletId_suffix = leafletId_suffix)
+  # event_data <- leaflet_mapdata_filter(df = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix, leafletId_suffix = leafletId_suffix)
   renderTable({
+    tab_name <- paste(event_type, tab_name_suffix, sep = '')
     total_count <- requestCount(event_data, event_type)
-    
-    df <- valueCount(event_data = event_data, event_type = event_type, value_column = value_column) 
+
+    df <- valueCount(event_data = event_data
+                       # leaflet_mapdata(event_data = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix)                 
+                       , event_type = event_type, value_column = value_column) 
     column_heading_value = simple_cap(str_replace(value_column,'_', ' '))
     column_heading_measure = "count" 
     column_heading_measure_pct = paste("% by ",column_heading_measure) 
@@ -239,8 +188,9 @@ renderTable_value <- function(event_data = all_data, event_type = "all", value_c
 
 
 # output$event.raw <- 
-renderPrint_raw <- function(event_data = all_data, event_type = "all"){
+renderPrint_raw <- function(event_data = all_data, event_type = "all", tab_name_suffix = ''){
   renderPrint({
+    tab_name <- paste(event_type, tab_name_suffix, sep = '')
     #orig <- options(width = 1000)
     event_data() %>%
       remove_empty(which = c("rows", "cols")) %>%
@@ -263,8 +213,9 @@ renderPrint_raw <- function(event_data = all_data, event_type = "all"){
 
 
 # output$event.table <- 
-renderDT_table <- function(event_data = all_data, event_type = "all"){
+renderDT_table <- function(event_data = all_data, event_type = "all", tab_name_suffix = ''){
   renderDT({
+    tab_name <- paste(event_type, tab_name_suffix, sep = '')
     # updateSliderTextInput(session,"data_refresh_rate",selected = 120) 
     
     event_data() %>% 
@@ -284,7 +235,9 @@ renderDT_table <- function(event_data = all_data, event_type = "all"){
 }
 
 # output$event.download_csv <- 
-downloadHandler_csv <- function(event_data = all_data, event_type = "all"){
+downloadHandler_csv <- function(event_data = all_data, event_type = "all", tab_name_suffix = ''){
+  tab_name <- paste(event_type, tab_name_suffix, sep = '')
+  
   downloadHandler(
     filename = paste(event_type,".csv"),
     
@@ -299,19 +252,21 @@ downloadHandler_csv <- function(event_data = all_data, event_type = "all"){
 
 
 # output$event.app_proto_server_bytes.barplot <- 
-renderPlotly_value.barplot <-  function(event_data = all_data, event_type = "all", value_column = 'app_proto', measure_column = c('flow.bytes_toclient','flow.bytes_toserver'), agg_function = 'sum'){
+renderPlotly_value.barplot <-  function(event_data = all_data, event_type = "all", tab_name_suffix = '', value_column = 'app_proto', agg_function = 'sum'){
   renderPlotly({
     
-    if(! is.null(input$flow.value_picker))
-      value_column <- input$flow.value_picker
-    if(! is.null(input$flow.measure_picker))
-      measure_column <- input$flow.measure_picker
+    tab_name <- paste(event_type, tab_name_suffix, sep = '')
+    
+    value_column    <- eval(parse(text = paste('input$',tab_name ,'.value_picker', sep = '')))
+    measure_column  <- eval(parse(text = paste('input$',tab_name ,'.measure_picker', sep = '')))
+    graph_type      <- eval(parse(text = paste('input$',tab_name ,'.display_picker', sep = '')))
     
     if(measure_column == 'count'){
+      agg_function = ''
       df <- valueCount(event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column))
       colnames(df) <- c('timestamp',value_column,measure_column)
     }else{
-      df <- valueAgg( event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column), measure_column = measure_column, agg_function = agg_function)
+      df <- timeSpreadValueAgg( event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column), measure_column = measure_column, agg_function = agg_function)
     }    
     
     if (nrow(df) == 0)
@@ -337,8 +292,6 @@ renderPlotly_value.barplot <-  function(event_data = all_data, event_type = "all
       group_by_at(c('time',value_column)) %>%
       summarise(measure = sum(measure))
     
-    # names(df)[names(df) == value_column[1]] <- 'value_column'
-    
     p <- df %>%
       #group_by(time,app_proto) %>%
       #summarise("Mbps" = round(sum(flow.bytes_toserver)/131072,),3) %>%
@@ -356,112 +309,120 @@ renderPlotly_value.barplot <-  function(event_data = all_data, event_type = "all
        scale_fill_brewer(palette="Spectral")
       # scale_fill_brewer(palette="Set1")
     
-    if(input$flow.display_picker == 'bar')
+    if(graph_type == 'bar')
       p <- p + geom_bar(stat = "identity")
     
     
-    if(input$flow.display_picker == 'line')
+    if(graph_type == 'line')
       p <- p + geom_line(stat = "identity")
     
-    p
+    cdata <- session$clientData
+    ggplotly(p, 
+             # width = cdata$output_pid_width, 
+             height = (cdata$output_pid_height/4))
+             
   })
 }
 
-# output$event.app_proto_server_bytes.barplot <- 
-renderPlotly_app_proto_server_bytes.barplot <- function(event_data = all_data, event_type = "all"){
-  renderPlotly({
-    df <- event_data()
-    if (nrow(df) == 0)
-      return()
-    
-    df$time <- df$timestamp %>% 
-      as_datetime(tz = Sys.timezone(location = TRUE)) %>% 
-      floor_date(unit = "seconds")
-    
-    p <- df %>%
-      group_by(time,app_proto) %>%
-      summarise("Mbps" = round(sum(flow.bytes_toserver)/131072,),3) %>%
-      ggplot( aes(x=time, y=Mbps, colour=app_proto)) +
-      geom_col() +
-      #  geom_area(alpha=0.5) +
-      ylab("Mbps") + xlab("Time") + 
-      theme_ipsum()
-    p
-  })
-}
-
-# output$event.app_proto_client_bytes.barplot <- 
-renderPlotly_app_proto_client_bytes.barplot <- function(event_data = all_data, event_type = "all"){
-  renderPlotly({
-    df <- event_data()
-    if (nrow(df) == 0)
-      return()
-    
-    df$time <- df$timestamp %>% 
-      as_datetime(tz = Sys.timezone(location = TRUE)) %>% 
-      floor_date(unit = "seconds")
-    
-    p <- df %>%
-      group_by(time,app_proto) %>%
-      summarise("Mbps" = round(sum(flow.bytes_toclient)/131072,),3) %>%
-      ggplot( aes(x=time, y=Mbps, colour=app_proto)) +
-      geom_col() +
-      #  geom_area(alpha=0.5) +
-      ylab("Mbps") + xlab("Time") + 
-      theme_ipsum()
-    p
-  })
-}
-
-# output$event.app_proto_server_bytes2.barplot <- 
-renderPlotly_app_proto_server_averaged_bytes.barplot <- function(event_data = all_data, event_type = "all"){
-  renderPlotly({
-    df <- event_data()
-    if (nrow(df) == 0)
-      return()
-    
-    ######
-    # spread value over seconds in datetime range
-    df_results <- data.frame(
-      time = numeric(),
-      app_proto = character(),
-      bytes_toserver = numeric(),
-      bytes_toserver = numeric()
-    )
-    
-    for( i in (1:length(df))){
-      #df_row <- df[3,]
-      df_spread <- (as.numeric(as_datetime(df$flow.start[i]))):(as.numeric(as_datetime(df$flow.end[i]))) %>% 
-        as.data.frame(col.names = c('time')) 
-      names(df_spread) <- 'time'
-      df_spread$app_proto <- df$app_proto[i]
-      df_spread$bytes_toserver <- (df$flow.bytes_toserver[i] / length(df_spread))
-      df_spread$bytes_toclient <- (df$flow.bytes_toclient[i] / length(df_spread))
-      df_results <- rbind(df_results,df_spread)
-    }
-    df_results$time <- as_datetime(df_results$time, origin = lubridate::origin, tz = Sys.timezone(location = TRUE))
-    ###########  
-    
-    df <- df_results
-    rm(df_results)
-    
-    p <- df %>%
-      group_by(time,app_proto) %>%
-      summarise("Mbps to server" = sum(bytes_toserver)/131072,
-                "Mbps to client" = sum(bytes_toclient)/131072,) %>%
-      ggplot( aes(x=time, y="Mbps to server", colour=app_proto)) +
-      geom_col() +
-      #  geom_area(alpha=0.5) +
-      ylab("Mbps") + xlab("Time") + 
-      theme_ipsum()
-    p
-  })
-}
+# # output$event.app_proto_server_bytes.barplot <- 
+# renderPlotly_app_proto_server_bytes.barplot <- function(event_data = all_data, event_type = "all"){
+#   renderPlotly({
+#     df <- event_data()
+#     if (nrow(df) == 0)
+#       return()
+#     
+#     df$time <- df$timestamp %>% 
+#       as_datetime(tz = Sys.timezone(location = TRUE)) %>% 
+#       floor_date(unit = "seconds")
+#     
+#     p <- df %>%
+#       group_by(time,app_proto) %>%
+#       summarise("Mbps" = round(sum(flow.bytes_toserver)/131072,),3) %>%
+#       ggplot( aes(x=time, y=Mbps, colour=app_proto)) +
+#       geom_col() +
+#       #  geom_area(alpha=0.5) +
+#       ylab("Mbps") + xlab("Time") + 
+#       theme_ipsum()
+#     p
+#   })
+# }
+# 
+# # output$event.app_proto_client_bytes.barplot <- 
+# renderPlotly_app_proto_client_bytes.barplot <- function(event_data = all_data, event_type = "all"){
+#   renderPlotly({
+#     df <- event_data()
+#     if (nrow(df) == 0)
+#       return()
+#     
+#     df$time <- df$timestamp %>% 
+#       as_datetime(tz = Sys.timezone(location = TRUE)) %>% 
+#       floor_date(unit = "seconds")
+#     
+#     p <- df %>%
+#       group_by(time,app_proto) %>%
+#       summarise("Mbps" = round(sum(flow.bytes_toclient)/131072,),3) %>%
+#       ggplot( aes(x=time, y=Mbps, colour=app_proto)) +
+#       geom_col() +
+#       #  geom_area(alpha=0.5) +
+#       ylab("Mbps") + xlab("Time") + 
+#       theme_ipsum()
+#     p
+#   })
+# }
+# 
+# # output$event.app_proto_server_bytes2.barplot <- 
+# renderPlotly_app_proto_server_averaged_bytes.barplot <- function(event_data = all_data, event_type = "all"){
+#   renderPlotly({
+#     df <- event_data()
+#     if (nrow(df) == 0)
+#       return()
+#     
+#     ######
+#     # spread value over seconds in datetime range
+#     df_results <- data.frame(
+#       time = numeric(),
+#       app_proto = character(),
+#       bytes_toserver = numeric(),
+#       bytes_toserver = numeric()
+#     )
+#     
+#     for( i in (1:length(df))){
+#       #df_row <- df[3,]
+#       df_spread <- (as.numeric(as_datetime(df$flow.start[i]))):(as.numeric(as_datetime(df$flow.end[i]))) %>% 
+#         as.data.frame(col.names = c('time')) 
+#       names(df_spread) <- 'time'
+#       df_spread$app_proto <- df$app_proto[i]
+#       df_spread$bytes_toserver <- (df$flow.bytes_toserver[i] / length(df_spread))
+#       df_spread$bytes_toclient <- (df$flow.bytes_toclient[i] / length(df_spread))
+#       df_results <- rbind(df_results,df_spread)
+#     }
+#     df_results$time <- as_datetime(df_results$time, origin = lubridate::origin, tz = Sys.timezone(location = TRUE))
+#     ###########  
+#     
+#     df <- df_results
+#     rm(df_results)
+#     
+#     p <- df %>%
+#       group_by(time,app_proto) %>%
+#       summarise("Mbps to server" = sum(bytes_toserver)/131072,
+#                 "Mbps to client" = sum(bytes_toclient)/131072,) %>%
+#       ggplot( aes(x=time, y="Mbps to server", colour=app_proto)) +
+#       geom_col() +
+#       #  geom_area(alpha=0.5) +
+#       ylab("Mbps") + xlab("Time") + 
+#       theme_ipsum()
+#     
+#     ggplotly(p, width = cdata$output_pid_width, height = 50)
+#     
+#   })
+# }
 
 ### Maps
 
-observeEvent_map_button <- function(event_type = "all", leafletId = "_map_leaflet", buttonId = "_zoom_all_button"){
-  leafletId <- paste( event_type, leafletId,sep="")
+observeEvent_map_button <- function(event_type = "all", tab_name_suffix = '_map', leafletId_suffix = "_leaflet", buttonId = "_zoom_all_button"){
+  
+  tab_name <- paste(event_type, tab_name_suffix, sep = '')
+  leafletId <- paste( tab_name, leafletId_suffix,sep="")
   button_inputId <- paste( "input$",leafletId, buttonId,sep="")
   
   observeEvent(eval(parse(text = button_inputId)), {
@@ -472,8 +433,11 @@ observeEvent_map_button <- function(event_type = "all", leafletId = "_map_leafle
       flyTo(lng, lat, zoom = my_zoom)
   })
 }
-renderLeaflet_map_destination <- function(event_data = all_data, event_type = "all", color_column = 'event_type',group_by_src = FALSE){
+
+renderLeaflet_map_destination <- function(event_data = all_data, event_type = "all", tab_name_suffix = '_map', color_column = 'event_type',group_by_src = FALSE){
   renderLeaflet({
+    tab_name <- paste(event_type, tab_name_suffix, sep = '')
+    
     #user_settings <- user_settings()
     df <- mapData(event_data(),event_type = event_type, color_column = color_column,group_by_src = group_by_src)
     
@@ -541,12 +505,35 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
   })
 }
 
-leaflet_mapdata <- function(event_data = all_data, event_type = "all"){
-  df <- event_data() %>%
+leaflet_mapdata <- function(event_data = all_data, event_type = "all", tab_name_suffix = '_map', leafletId_suffix = '_leaflet'){
+  tab_name <- paste(event_type, tab_name_suffix, sep = '')
+  leafletId <- paste( tab_name, leafletId_suffix,sep="")
+  
+  leaflet_mapdata_filter(df = event_data(), event_type = event_type, tab_name_suffix = tab_name_suffix, leafletId_suffix = leafletId_suffix)
+  
+  # df <- event_data() %>%
+  #   mutate(country_name = dest_country_name, country_code = dest_country_code, city = dest_city, 
+  #          ip = dest_ip, long = dest_long,lat = dest_lat)
+  # 
+  # current_map_bounds_var <- paste('input$', leafletId, '_bounds', sep='')
+  # bounds <- eval(parse(text = current_map_bounds_var))
+  # if (is.null(bounds)){
+  #   df
+  # } else {
+  #   in_bounding_box(df, bounds)
+  # }
+}
+
+leaflet_mapdata_filter <- function(df, event_type = "all", tab_name_suffix = '_map', leafletId_suffix = '_leaflet'){
+  tab_name <- paste(event_type, tab_name_suffix, sep = '')
+  leafletId <- paste( tab_name, leafletId_suffix,sep="")
+  
+  
+  df <- df %>%
     mutate(country_name = dest_country_name, country_code = dest_country_code, city = dest_city, 
            ip = dest_ip, long = dest_long,lat = dest_lat)
   
-  current_map_bounds_var <- paste('input$', event_type,'_map_leaflet_bounds',sep='')
+  current_map_bounds_var <- paste('input$', leafletId, '_bounds', sep='')
   bounds <- eval(parse(text = current_map_bounds_var))
   if (is.null(bounds)){
     df
@@ -569,15 +556,18 @@ leaflet_mapdata <- function(event_data = all_data, event_type = "all"){
 #   
 # }
 
-renderValueBox_mapvalue <- function(event_data = all_data, event_type = "all", value_column = 'event_type', value = '', filter_column = '', filter_value = '', icon_name = "chart-line", opp = 'count', label = NULL){
+renderValueBox_mapvalue <- function(event_data = all_data, event_type = "all", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', value_column = 'event_type', value = '', filter_column = '', filter_value = '', icon_name = "chart-line", opp = 'count', label = NULL){
   renderValueBox({
+    
+    tab_name <- paste(event_type, tab_name_suffix, sep = '')
+    
     auto_label <- value_column
     if(nchar(value) > 0)
       auto_label <- paste(value,auto_label)
     
     auto_label <- paste(opp,auto_label)
     
-    dt <- leaflet_mapdata(event_data = event_data, event_type = event_type)
+    dt <- leaflet_mapdata(event_data = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix, leafletId_suffix = leafletId_suffix)
     
     #dt <- Filter(Negate(is.null), dt[,c(value_column,filter_column)])
     
@@ -747,9 +737,12 @@ renderValueBox_mapvalue <- function(event_data = all_data, event_type = "all", v
 
 
 
-renderDT_maptable_detail <- function(event_data = all_data, event_type = "all"){
+renderDT_maptable_detail <- function(event_data = all_data, event_type = "all", tab_name_suffix = '_map', leafletId_suffix = '_leaflet'){
   renderDT({
-    dt <- leaflet_mapdata(event_data = event_data, event_type = event_type) 
+    
+    tab_name <- paste(event_type, tab_name_suffix, sep = '')
+    
+    dt <- leaflet_mapdata(event_data = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix, leafletId_suffix = leafletId_suffix) 
     
     # browser()
     # dt$dns.rrtype

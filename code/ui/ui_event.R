@@ -142,7 +142,7 @@ tabItem_timeseries <- function(event = "all") {
                 
                 choices = c(colnames(
                   data_row_template[,!unlist(lapply(data_row_template, is.numeric))]
-                                     )[4:15],
+                                     )[3:14],
                             colnames(select(
                               data_row_template[unlist(lapply(data_row_template,is.factor))]
                               , matches(paste0("^(", paste(event, collapse="|"), ")"))))
@@ -199,6 +199,126 @@ tabItem_timeseries <- function(event = "all") {
           
   )
 }
+
+
+##Map Dash###############################################################################
+
+tabItem_overview <- function(event = "all") {
+  tab_name <- paste(event,"_overview",sep="")
+  if( event == "all"){
+    event_type <- "event"  
+  }else{
+    event_type <- event
+  }
+  tab_title <- simple_cap(paste(event_type ,  'Overview'))
+
+  plotly_outputId <- paste(tab_name,".plotly",sep="")
+  measure_picker_inputId <- paste(tab_name,".measure_picker",sep="")
+  value_picker_inputId <- paste(tab_name,".value_picker",sep="")
+  display_picker_inputId <- paste(tab_name,".display_picker",sep="")
+  download_csv_outputId <- paste(tab_name,".download_timeseries_csv",sep="")
+  
+  leaflet_outputId <- paste(tab_name, ".leaflet",sep="")
+  table_summary_outputId <- paste(tab_name,".table_summary",sep="")
+  
+  
+  tabItem(tabName = tab_name,
+          # fluidRow(width = "100%",
+          #          column(
+          #            width = 6,h2(icon("table"), HTML("&nbsp;"),tab_title)
+          #          )
+          # ),
+          fluidRow(
+            column(width = 4,
+                   column(
+                     width = 6,
+                     pickerInput(
+                       inputId = value_picker_inputId,
+                       label = "Value Column", 
+                       
+                       choices = c(colnames(
+                         data_row_template[,!unlist(lapply(data_row_template, is.numeric))]
+                       )[3:14],
+                       colnames(select(
+                         data_row_template[unlist(lapply(data_row_template,is.factor))]
+                         , matches(paste0("^(", paste(event, collapse="|"), ")"))))
+                       ),
+                       options = list(
+                         `live-search` = TRUE)
+                     )
+                   )
+                   ,
+                   column(
+                     width = 6,
+                     pickerInput(
+                       inputId = measure_picker_inputId,
+                       label = "Measure",
+                       choices = c('count',
+                                   colnames(select(
+                                     data_row_template[unlist(lapply(data_row_template,is.numeric))]
+                                     , matches(paste0("^(", paste(event, collapse="|"), ")")))
+                                   )),
+                       options = list(
+                         `live-search` = TRUE)
+                     )
+                   ),
+                   column(
+                     width = 6,
+                     pickerInput(
+                       inputId = display_picker_inputId,
+                       label = "Measure",
+                       choices = c('line','bar'),
+                       options = list(
+                         `live-search` = TRUE)
+                     )
+                   )
+            )
+            ,
+            column(width = 8,
+              fluidRow(
+                
+                leafletOutput(outputId = leaflet_outputId)
+                %>% withSpinner(color="#0dc5c1")
+              ),
+            ),
+            column(width = 8,
+                plotlyOutput(
+                  plotly_outputId 
+                   # width = "100%", height = 350
+                )
+            ),
+            column(
+               width = 4,
+                     
+               # box( 
+               #   width = 12,
+               #   status = "info",
+               #   solidHeader = FALSE,
+               #   # title = paste(summary_table_title, sep = "" ),
+               #   div(style = 'height:120px;overflow-y: scroll', 
+                   tableOutput(outputId = table_summary_outputId)
+                   # %>% withSpinner(color="#0dc5c1")
+               #   )
+               # )
+            )
+            
+            
+            
+            
+            
+          ),
+          fluidRow(
+            column(
+              width = 3,
+              #offset = 9,
+              downloadButton(download_csv_outputId, "Download as CSV")
+            )
+          )
+          
+  )
+}
+
+
 
 ####--UI MAP--------------------------------------------------------------------------------------------
 

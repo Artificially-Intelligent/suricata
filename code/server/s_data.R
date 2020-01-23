@@ -192,7 +192,8 @@ valueCount <- function(event_data = all_data, event_type = event_type, value_col
     return()
   
   df <- event_data()
-  order <- unique(df[,value_column[1]])
+  df
+  order <- unique(df[value_column[1],])
   
   df <- df %>%
     filter(event_type %in% event_type) %>% 
@@ -203,7 +204,7 @@ valueCount <- function(event_data = all_data, event_type = event_type, value_col
   df
 }
 
-valueAgg <- function(event_data = all_data, event_type = event_type, value_column = value_column, measure_column = measure_column, agg_function = agg_function){
+valueAgg <- function(event_data = all_data, event_type = event_type, value_column = 'event_type', measure_column , agg_function = 'sum'){
   
   if(event_type == '' || event_type == 'all')
     event_type <- event_types
@@ -221,19 +222,19 @@ valueAgg <- function(event_data = all_data, event_type = event_type, value_colum
  
   # df$value_column <- df[,value_column[1]]
   
-  df$measure_column <- df[,measure_column[1]]
+  df$measure_column <- as.numeric(df[,measure_column[1]])
   if(length(measure_column) >= 2){
-    df$measure_column2 <- df[,measure_column[2]]
+    df$measure_column2 <- as.numeric(df[,measure_column[2]])
   }else{
     df$measure_column2 <- NA
   }
   if(length(measure_column) >= 3){
-    df$measure_column3 <- df[,measure_column[3]]
+    df$measure_column3 <- as.numeric(df[,measure_column[3]])
   }else{
     df$measure_column3 <- NA
   }
   if(length(measure_column) >= 4){
-    df$measure_column4 <- df[,measure_column[4]]
+    df$measure_column4 <- as.numeric(df[,measure_column[4]])
   }else{
     df$measure_column4 <- NA
   }
@@ -254,6 +255,81 @@ valueAgg <- function(event_data = all_data, event_type = event_type, value_colum
   colnames(df) <- c(value_column, measure_column)
 
   df
+}
+
+
+timeSpreadValueAgg <- function(event_data = all_data, event_type = event_type, value_column = value_column, measure_column = measure_column, agg_function = agg_function){
+
+  new_value_column <- value_column
+    
+  if(event_type == 'flow'){
+    new_value_column <- c(value_column,'flow.start','flow.end')
+  }
+  
+  if(event_type == 'netflow'){
+    new_value_column <- c(value_column,'netflow.start','netflow.end')
+  }
+  
+  df <- valueAgg(event_data, event_type, new_value_column, measure_column, agg_function)
+  
+  min_timestamp <- min(df$timestamp)
+  
+  if(measure_column == 'flow.bytes_toserver'){
+    df_single <- df[((df$flow.end - df$flow.start) < 1),]
+    df_multi  <- df[((df$flow.end - df$flow.start) >= 1),]
+    
+    require(data.table)
+    df_multi_spread  <- setDT(df_multi)[ , list(
+      timestamp = seq(flow.start, flow.end, by = "sec"),
+      event_type = event_type,
+      flow.bytes_toserver = flow.bytes_toserver / ceiling(as.numeric(difftime(flow.end, flow.start, units = "secs")))
+      , flow.start = flow.start
+      , flow.end = flow.end
+      ,    seconds = ceiling(as.numeric(difftime(flow.end, flow.start, units = "secs")))
+      ), by = 1:nrow(df_multi)] %>%
+      as.data.frame()
+    
+    df <- rbind(df_single[,c(value_column,measure_column)], df_multi_spread[,c(value_column,measure_column)] )
+  }
+  
+  if(measure_column == 'flow.bytes_toclient'){
+    df_single <- df[((df$flow.end - df$flow.start) < 1),]
+    df_multi  <- df[((df$flow.end - df$flow.start) >= 1),]
+    
+    
+    require(data.table)
+    df_multi_spread  <- setDT(df_multi)[ , list(
+      timestamp = seq(flow.start, flow.end, by = "sec"),
+      event_type = event_type,
+      flow.bytes_toclient = flow.bytes_toclient / ceiling(as.numeric(difftime(flow.end, flow.start, units = "secs")))
+      , flow.start = flow.start
+      , flow.end = flow.end
+      ,    seconds = ceiling(as.numeric(difftime(flow.end, flow.start, units = "secs")))
+    ), by = 1:nrow(df_multi)] %>%
+      as.data.frame()
+    
+    df <- rbind(df_single[,c(value_column,measure_column)], df_multi_spread[,c(value_column,measure_column)] )
+  }
+  
+  if(measure_column %in% c('netflow.bytes')){
+    df_single <- df[((df$netflow.end - df$netflow.start) < 1),]
+    df_multi  <- df[((df$netflow.end - df$netflow.start) >= 1),]
+    
+    require(data.table)
+    df_multi_spread  <- setDT(df_multi)[ , list(
+      timestamp = seq(netflow.start, netflow.end, by = "sec"),
+      event_type = event_type,
+      netflow.bytes = netflow.bytes / ceiling(as.numeric(difftime(netflow.end, netflow.start, units = "secs")))
+      , netflow.start = netflow.start
+      , netflow.end = netflow.end
+      , seconds = ceiling(as.numeric(difftime(netflow.end, netflow.start, units = "secs")))
+    ), by = 1:nrow(df_multi)] %>%
+      as.data.frame()
+    
+    df <- rbind(df_single[,c(value_column,measure_column)], df_multi_spread[,c(value_column,measure_column)] ) 
+  }
+  
+  df %>% filter(timestamp > min_timestamp)
 }
 
 # Count the total nrows of distinct alrtStream$dest_ip

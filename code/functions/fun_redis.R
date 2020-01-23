@@ -263,6 +263,9 @@ format_redis_to_df <- function(new_lines = new_lines,
     formatted_lines$flow.duration <- as.numeric(difftime(formatted_lines$flow.end, formatted_lines$flow.start, units = c("secs")))
     formatted_lines$flow.avg_response_time <- formatted_lines$flow.duration / formatted_lines$flow.pkts_toclient
 
+    formatted_lines$http.content_length <- as.numeric(formatted_lines$http.content_length)
+    
+    
     difftime(formatted_lines$flow.end, formatted_lines$flow.start, units = c("secs"))
         
     # Return result values for columns in data_row_template in a desired order 
@@ -338,6 +341,7 @@ data_row_template <- data.frame(
   dns.grouped.PTR = character(),
   dns.grouped.CNAME = character(),
   dns.grouped.A = character(),
+  dns.grouped.TXT = character(),
   tls.subject = character(), 
   tls.issuerdn = character(),
   tls.serial = character(),
@@ -439,6 +443,13 @@ data_row_template <- data.frame(
   dhcp.client_mac = character(),
   dhcp.assigned_ip = character(),
   dhcp.dhcp_type = character(),
+  dhcp.client_ip = character(),
+  dhcp.relay_ip = character(),
+  dhcp.next_server_ip = character(),
+  dhcp.lease_time = character(),
+  dhcp.subnet_mask = character(),
+  dhcp.routers = character(),
+  dhcp.dns_servers = character(),
   ikev2.version_major = character(),
   ikev2.version_minor = character(),
   ikev2.exchange_type = character(),
@@ -453,6 +464,9 @@ data_row_template <- data.frame(
   ikev2.alg_auth = character(),
   ikev2.alg_prf = character(),
   ikev2.alg_dh = character(),
-  ikev2.alg_esn = character()
+  ikev2.alg_esn = character(),
+  ssh.client = character(),
+  ssh.server.proto_version = character(),
+  ssh.server.software_version = character()
 )
 # dhcp.client_ip,dhcp.relay_ip,dhcp.next_server_ip,dhcp.lease_time,dhcp.subnet_mask,dhcp.routers,dhcp.dns_servers"
