@@ -112,6 +112,7 @@ eventData <- function(alrtStream, timeWindow, event_type = '') {
             div(class='loading-text',paste(sep = '', "No traffic in source database in reporting window(", (Sys.time() - timeWindow), "-now). Waiting for system to aquire new traffic data..."))
           )
         )
+        return(data_row_template)
       }
     }
     return(data_out)
@@ -182,7 +183,7 @@ latestRequestCount <- function(alrtStream, event_type = "") {
 #   }, 0)
 # }
 
-valueCount <- function(event_data = all_data, event_type = event_type, value_column = value_column){
+valueCount <- function(event_data = all_data, event_type = event_type, value_column = value_column, bounds = NULL){
   
   if(event_type == '' || event_type == 'all')
     event_type <- event_types
@@ -192,7 +193,13 @@ valueCount <- function(event_data = all_data, event_type = event_type, value_col
     return()
   
   df <- event_data()
-  df
+
+  
+  # filter value to bounds provided by map
+  if (! is.null(bounds)){
+    df <- in_bounding_box(df, bounds, prefix = 'dest_')
+  }
+  
   order <- unique(df[value_column[1],])
   
   df <- df %>%
@@ -204,7 +211,7 @@ valueCount <- function(event_data = all_data, event_type = event_type, value_col
   df
 }
 
-valueAgg <- function(event_data = all_data, event_type = event_type, value_column = 'event_type', measure_column , agg_function = 'sum'){
+valueAgg <- function(event_data = all_data, event_type = event_type, value_column = 'event_type', measure_column , agg_function = 'sum', bounds = NULL){
   
   if(event_type == '' || event_type == 'all')
     event_type <- event_types
@@ -214,6 +221,11 @@ valueAgg <- function(event_data = all_data, event_type = event_type, value_colum
   if (nrow(df) == 0)
     return()
    
+  # filter value to bounds provided by map
+  if (! is.null(bounds)){
+    df <- in_bounding_box(df, bounds, prefix = 'dest_')
+  }
+  
   
   # length(measure_column)
   # for(measure in measure_column){
@@ -258,7 +270,7 @@ valueAgg <- function(event_data = all_data, event_type = event_type, value_colum
 }
 
 
-timeSpreadValueAgg <- function(event_data = all_data, event_type = event_type, value_column = value_column, measure_column = measure_column, agg_function = agg_function){
+timeSpreadValueAgg <- function(event_data = all_data, event_type = event_type, value_column = value_column, measure_column = measure_column, agg_function = agg_function, bounds = NULL){
 
   new_value_column <- value_column
     
@@ -270,8 +282,10 @@ timeSpreadValueAgg <- function(event_data = all_data, event_type = event_type, v
     new_value_column <- c(value_column,'netflow.start','netflow.end')
   }
   
-  df <- valueAgg(event_data, event_type, new_value_column, measure_column, agg_function)
+  df <- valueAgg(event_data, event_type, new_value_column, measure_column, agg_function, bounds = bounds)
+
   
+    
   min_timestamp <- min(df$timestamp)
   
   if(measure_column == 'flow.bytes_toserver'){

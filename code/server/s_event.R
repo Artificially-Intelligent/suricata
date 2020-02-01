@@ -162,24 +162,56 @@ renderBubbles_value <- renderBubbles_destination <- function(event_data = all_da
 }
 
 
-renderTable_value <- function(event_data = all_data, event_type = "all", tab_name_suffix = '', leafletId_suffix = '', value_column = 'event_type'){
+renderTable_value <- function(event_data = all_data, event_type = "all", tab_name_suffix = '', leafletId_suffix = '', value_column = 'event_type', measure_column = '', agg_function = 'sum'){
   # if(nchar(leafletId_suffix) > 0)
   #   event_data <- leaflet_mapdata(event_data = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix, leafletId_suffix = leafletId_suffix)
   # event_data <- leaflet_mapdata_filter(df = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix, leafletId_suffix = leafletId_suffix)
   renderTable({
     tab_name <- paste(event_type, tab_name_suffix, sep = '')
-    total_count <- requestCount(event_data, event_type)
-
-    df <- valueCount(event_data = event_data
+    leafletId <- paste( tab_name, leafletId_suffix,sep="")
+    current_map_bounds_var <- paste('input$', leafletId, '_bounds', sep='')
+    bounds <- eval(parse(text = current_map_bounds_var))
+    
+    dynamic_value_column    <- eval(parse(text = paste('input$',tab_name ,'.value_picker', sep = '')))
+    if(! is.null(dynamic_value_column))
+      value_column <- dynamic_value_column
+    
+    dynamic_measure_column  <- eval(parse(text = paste('input$',tab_name ,'.measure_picker', sep = '')))
+    if(! is.null(dynamic_measure_column))
+      measure_column <- dynamic_measure_column
+    
+    if(measure_column == 'count'){
+      df <- valueCount(event_data = event_data
                        # leaflet_mapdata(event_data = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix)                 
-                       , event_type = event_type, value_column = value_column) 
+                       , event_type = event_type
+                       , value_column = value_column
+                       , bounds = bounds) %>%
+        mutate(count = n)
+      measure_total <- requestCount(event_data, event_type)
+      
+      column_heading_measure = measure_column
+    }else{
+      df <- valueAgg(event_data = event_data
+                     , event_type = event_type
+                     , value_column = value_column
+                     , measure_column = measure_column
+                     , agg_function = agg_function
+                     , bounds = bounds) 
+      
+      measure_total <- sum(df[,2:length(df)])
+      
+      column_heading_measure = paste(agg_function, measure_column)
+    }
+      
     column_heading_value = simple_cap(str_replace(value_column,'_', ' '))
-    column_heading_measure = "count" 
+     
     column_heading_measure_pct = paste("% by ",column_heading_measure) 
+    
     df <- df %>%
-      mutate(percentage = n / total_count * 100) %>%
-      select(column_heading_value = value_column, column_heading_measure = n, column_heading_measure_pct = percentage) %>%
-      as.data.frame() %>%
+      # mutate_at(.vars = vars('percentage'), .funs = pct_calc) %>%
+      select(column_heading_value = value_column, column_heading_measure = measure_column) %>%
+      mutate(column_heading_measure_pct = column_heading_measure / measure_total * 100) %>%
+            as.data.frame() %>%
       head(15)
     colnames(df) <- c(column_heading_value,column_heading_measure,column_heading_measure_pct)
     df
@@ -211,8 +243,6 @@ renderPrint_raw <- function(event_data = all_data, event_type = "all", tab_name_
 }
 
 
-
-# output$event.table <- 
 renderDT_table <- function(event_data = all_data, event_type = "all", tab_name_suffix = ''){
   renderDT({
     tab_name <- paste(event_type, tab_name_suffix, sep = '')
@@ -234,8 +264,7 @@ renderDT_table <- function(event_data = all_data, event_type = "all", tab_name_s
   )
 }
 
-# output$event.download_csv <- 
-downloadHandler_csv <- function(event_data = all_data, event_type = "all", tab_name_suffix = ''){
+downloadHandler_csv <- function(event_data = all_data, event_type = "all", tab_name_suffix = '', leafletId_suffix = ''){
   tab_name <- paste(event_type, tab_name_suffix, sep = '')
   
   downloadHandler(
@@ -252,10 +281,14 @@ downloadHandler_csv <- function(event_data = all_data, event_type = "all", tab_n
 
 
 # output$event.app_proto_server_bytes.barplot <- 
-renderPlotly_value.barplot <-  function(event_data = all_data, event_type = "all", tab_name_suffix = '', value_column = 'app_proto', agg_function = 'sum'){
+renderPlotly_value.barplot <-  function(event_data = all_data, event_type = "all", tab_name_suffix = '', leafletId_suffix = '', value_column = 'app_proto', agg_function = 'sum'){
   renderPlotly({
     
     tab_name <- paste(event_type, tab_name_suffix, sep = '')
+    
+    leafletId <- paste( tab_name, leafletId_suffix,sep="")
+    current_map_bounds_var <- paste('input$', leafletId, '_bounds', sep='')
+    bounds <- eval(parse(text = current_map_bounds_var))
     
     value_column    <- eval(parse(text = paste('input$',tab_name ,'.value_picker', sep = '')))
     measure_column  <- eval(parse(text = paste('input$',tab_name ,'.measure_picker', sep = '')))
@@ -263,10 +296,10 @@ renderPlotly_value.barplot <-  function(event_data = all_data, event_type = "all
     
     if(measure_column == 'count'){
       agg_function = ''
-      df <- valueCount(event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column))
+      df <- valueCount(event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column), bounds = bounds)
       colnames(df) <- c('timestamp',value_column,measure_column)
     }else{
-      df <- timeSpreadValueAgg( event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column), measure_column = measure_column, agg_function = agg_function)
+      df <- timeSpreadValueAgg( event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column), measure_column = measure_column, agg_function = agg_function, bounds = bounds)
     }    
     
     if (nrow(df) == 0)
@@ -434,9 +467,10 @@ observeEvent_map_button <- function(event_type = "all", tab_name_suffix = '_map'
   })
 }
 
-renderLeaflet_map_destination <- function(event_data = all_data, event_type = "all", tab_name_suffix = '_map', color_column = 'event_type',group_by_src = FALSE){
+renderLeaflet_map_destination <- function(event_data = all_data, event_type = "all", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', color_column = 'event_type',group_by_src = FALSE){
   renderLeaflet({
     tab_name <- paste(event_type, tab_name_suffix, sep = '')
+    leafletId <- paste( tab_name, leafletId_suffix,sep="")
     
     #user_settings <- user_settings()
     df <- mapData(event_data(),event_type = event_type, color_column = color_column,group_by_src = group_by_src)
@@ -466,7 +500,8 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
         lng_bounds <- lng_bounds + c(1,-1)
       }
       
-      current_map_bounds_var <- paste('input$', event_type,'_map_leaflet_bounds',sep='')
+      current_map_bounds_var <- paste('input$', leafletId, '_bounds', sep='')
+      # current_map_bounds_var <- paste('input$', event_type,'_map_leaflet_bounds',sep='')
       bounds <- isolate(eval(parse(text = current_map_bounds_var)))
       if(!is.null(bounds)){
         lat_bounds <- c(bounds$north,bounds$south)

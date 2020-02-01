@@ -48,12 +48,13 @@ clusterJS <- "function (cluster) {
                     
                       }"
 
-in_bounding_box <- function(data, bounds) {
+in_bounding_box <- function(data, bounds, prefix = '') {
+  
   data %>%
     dplyr::filter(
-        lat > bounds$south &
-        lat < bounds$north &
-        long < bounds$east & 
-        long > bounds$west
+      eval(parse(text = paste(sep = '', prefix , 'lat'))) > bounds$south &
+      eval(parse(text = paste(sep = '', prefix , 'lat'))) < bounds$north &
+      eval(parse(text = paste(sep = '', prefix , 'long'))) < bounds$east & 
+      eval(parse(text = paste(sep = '', prefix , 'long'))) > bounds$west
     )
 }
