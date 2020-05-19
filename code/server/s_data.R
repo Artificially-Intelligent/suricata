@@ -188,9 +188,12 @@ valueCount <- function(event_data = all_data, event_type = event_type, value_col
   if(event_type == '' || event_type == 'all')
     event_type <- event_types
   
-  
-  if (nrow(event_data()) == 0)
-    return()
+  # If no data in scope return table with no rows
+  if (nrow(event_data()) == 0){
+    df <- data.frame(lapply(1:(1+length(value_column)),function(x){character()}))
+    colnames(df) <- c(value_column,"n")
+    return(df)    
+  }
   
   df <- event_data()
 
@@ -218,8 +221,13 @@ valueAgg <- function(event_data = all_data, event_type = event_type, value_colum
   
   df <- event_data()
   
-  if (nrow(df) == 0)
-    return()
+  # If no data in scope return table with no rows
+  if (nrow(event_data()) == 0){
+    browser()
+    df <- data.frame(lapply(1:(length(measure_column) +length(value_column)),function(x){character()}))
+    colnames(df) <- c(value_column,measure_column)
+    return(df)    
+  }
    
   # filter value to bounds provided by map
   if (! is.null(bounds)){
@@ -286,8 +294,24 @@ dynamic_valueAgg <- function(event_data = all_data, event_type = "all", tab_name
   dynamic_measure_column  <- eval(parse(text = paste('input$',tab_name ,'.measure_picker', sep = '')))
   if(! is.null(dynamic_measure_column))
     measure_column <- dynamic_measure_column
+
+  if(measure_column == 'count'){
+    column_heading_measure = measure_column
+  }else{
+    column_heading_measure = paste(agg_function, measure_column)
+  }
+  column_heading_value = simple_cap(str_replace(value_column,'_', ' '))
+  column_heading_measure_pct = paste("% by ",column_heading_measure) 
+  
+  #If no matching source data exists row with 0 values
+  # if(nrow(event_data()) == 0){
+  #   df <- data.frame(event_type,0,0)
+  #   colnames(df) <- c(column_heading_value,column_heading_measure,column_heading_measure_pct)
+  #   return(df)
+  # }
   
   if(measure_column == 'count'){
+
     df <- valueCount(event_data = event_data
                      # leaflet_mapdata(event_data = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix)                 
                      , event_type = event_type
@@ -295,8 +319,6 @@ dynamic_valueAgg <- function(event_data = all_data, event_type = "all", tab_name
                      , bounds = bounds) %>%
       mutate(count = n)
     measure_total <- requestCount(event_data, event_type)
-    
-    column_heading_measure = measure_column
   }else{
     df <- valueAgg(event_data = event_data
                    , event_type = event_type
@@ -306,14 +328,8 @@ dynamic_valueAgg <- function(event_data = all_data, event_type = "all", tab_name
                    , bounds = bounds) 
     
     measure_total <- sum(df[,length(combined_value_columns)+1:length(df)])
-    
-    column_heading_measure = paste(agg_function, measure_column)
+  
   }
-  
-  
-  column_heading_value = simple_cap(str_replace(value_column,'_', ' '))
-  
-  column_heading_measure_pct = paste("% by ",column_heading_measure) 
   
   df <- df %>%
     # mutate_at(.vars = vars('percentage'), .funs = pct_calc) %>%

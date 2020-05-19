@@ -154,7 +154,8 @@ renderBubbles_value <- renderBubbles_destination <- function(event_data = all_da
       head(20)
 
     df[,value_column] <- as.character(df[,value_column])
-    bubbles(df$n, 
+    if(nrow(df)> 0)
+      bubbles(df$n, 
             df[,value_column], 
             df[,value_column]
             )
@@ -490,8 +491,6 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
                      , measure_column = measure_column
                      , agg_function = agg_function) %>%
       head(1000)
-    
-    # browser()
       
     value_column <- colnames(df)[length(location_columns) + 1]
     location_grouping_column <- location_columns[1]
@@ -519,8 +518,11 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
     df_long <- df[! is.na( df[long_col_name] ), c(long_col_name)]
     
     if(! is.null(df) && length(df_lat) > 0 && length(df_long) > 0){
+      
       lat_bounds <- c(max(df_lat), min(df_lat))
       lng_bounds <- c(max(df_long), min(df_long))
+      print(paste("lat_bounds ",lat_bounds, "lng_bounds ",lng_bounds , collapse = ''))
+    
       # if only one map item
       if(max(df_lat) == min(df_lat) || max(df_lat) == min(df_lat) ){
         print( 'only one map entry, expanding map bounds')
