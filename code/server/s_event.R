@@ -162,59 +162,51 @@ renderBubbles_value <- renderBubbles_destination <- function(event_data = all_da
 }
 
 
-renderTable_value <- function(event_data = all_data, event_type = "all", tab_name_suffix = '', leafletId_suffix = '', value_column = 'event_type', measure_column = '', agg_function = 'sum'){
-  # if(nchar(leafletId_suffix) > 0)
-  #   event_data <- leaflet_mapdata(event_data = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix, leafletId_suffix = leafletId_suffix)
-  # event_data <- leaflet_mapdata_filter(df = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix, leafletId_suffix = leafletId_suffix)
+renderTable_value <- function(event_data = all_data, event_type = "all", tab_name_suffix = '', leafletId_suffix = '', value_column = 'event_type', measure_column = 'count', agg_function = 'sum'){
   renderTable({
-    tab_name <- paste(event_type, tab_name_suffix, sep = '')
-    leafletId <- paste( tab_name, leafletId_suffix,sep="")
-    current_map_bounds_var <- paste('input$', leafletId, '_bounds', sep='')
-    bounds <- eval(parse(text = current_map_bounds_var))
-    
-    dynamic_value_column    <- eval(parse(text = paste('input$',tab_name ,'.value_picker', sep = '')))
-    if(! is.null(dynamic_value_column))
-      value_column <- dynamic_value_column
-    
-    dynamic_measure_column  <- eval(parse(text = paste('input$',tab_name ,'.measure_picker', sep = '')))
-    if(! is.null(dynamic_measure_column))
-      measure_column <- dynamic_measure_column
-    
-    if(measure_column == 'count'){
-      df <- valueCount(event_data = event_data
-                       # leaflet_mapdata(event_data = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix)                 
-                       , event_type = event_type
-                       , value_column = value_column
-                       , bounds = bounds) %>%
-        mutate(count = n)
-      measure_total <- requestCount(event_data, event_type)
-      
-      column_heading_measure = measure_column
-    }else{
-      df <- valueAgg(event_data = event_data
-                     , event_type = event_type
-                     , value_column = value_column
-                     , measure_column = measure_column
-                     , agg_function = agg_function
-                     , bounds = bounds) 
-      
-      measure_total <- sum(df[,2:length(df)])
-      
-      column_heading_measure = paste(agg_function, measure_column)
-    }
-      
-    column_heading_value = simple_cap(str_replace(value_column,'_', ' '))
-     
-    column_heading_measure_pct = paste("% by ",column_heading_measure) 
-    
-    df <- df %>%
-      # mutate_at(.vars = vars('percentage'), .funs = pct_calc) %>%
-      select(column_heading_value = value_column, column_heading_measure = measure_column) %>%
-      mutate(column_heading_measure_pct = column_heading_measure / measure_total * 100) %>%
-            as.data.frame() %>%
+    # tab_name <- paste(event_type, tab_name_suffix, sep = '')
+    # leafletId <- paste( tab_name, leafletId_suffix,sep="")
+    # current_map_bounds_var <- paste('input$', leafletId, '_bounds', sep='')
+    # bounds <- eval(parse(text = current_map_bounds_var))
+    # 
+    # dynamic_value_column    <- eval(parse(text = paste('input$',tab_name ,'.value_picker', sep = '')))
+    # if(! is.null(dynamic_value_column))
+    #   value_column <- dynamic_value_column
+    # 
+    # dynamic_measure_column  <- eval(parse(text = paste('input$',tab_name ,'.measure_picker', sep = '')))
+    # if(! is.null(dynamic_measure_column))
+    #   measure_column <- dynamic_measure_column
+    # 
+    # if(measure_column == 'count'){
+    #   df <- valueCount(event_data = event_data
+    #                    # leaflet_mapdata(event_data = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix)                 
+    #                    , event_type = event_type
+    #                    , value_column = value_column
+    #                    , bounds = bounds) %>%
+    #     mutate(count = n)
+    #   measure_total <- requestCount(event_data, event_type)
+    #   
+    #   column_heading_measure = measure_column
+    # }else{
+    #   df <- valueAgg(event_data = event_data
+    #                  , event_type = event_type
+    #                  , value_column = value_column
+    #                  , measure_column = measure_column
+    #                  , agg_function = agg_function
+    #                  , bounds = bounds) 
+    #   
+    #   measure_total <- sum(df[,2:length(df)])
+    #   
+    #   column_heading_measure = paste(agg_function, measure_column)
+    # }
+      dynamic_valueAgg(event_data = event_data, event_type = event_type
+                           , tab_name_suffix = tab_name_suffix
+                           , leafletId_suffix = leafletId_suffix
+                           , value_column = value_column
+                           , measure_column = measure_column
+                           , agg_function = agg_function) %>%
       head(15)
-    colnames(df) <- c(column_heading_value,column_heading_measure,column_heading_measure_pct)
-    df
+    
   }, digits = 1, options = list(scrollX = TRUE))
 }
 
@@ -299,7 +291,7 @@ renderPlotly_value.barplot <-  function(event_data = all_data, event_type = "all
       df <- valueCount(event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column), bounds = bounds)
       colnames(df) <- c('timestamp',value_column,measure_column)
     }else{
-      df <- timeSpreadValueAgg( event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column), measure_column = measure_column, agg_function = agg_function, bounds = bounds)
+      df <- valueAgg( event_data = event_data, event_type = event_type, value_column = c('timestamp',value_column), measure_column = measure_column, agg_function = agg_function, bounds = bounds)
     }    
     
     if (nrow(df) == 0)
@@ -467,34 +459,70 @@ observeEvent_map_button <- function(event_type = "all", tab_name_suffix = '_map'
   })
 }
 
-renderLeaflet_map_destination <- function(event_data = all_data, event_type = "all", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', color_column = 'event_type',group_by_src = FALSE){
+renderLeaflet_map_destination <- function(event_data = all_data, event_type = "all", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', value_column = 'event_type',group_by_src = FALSE,  measure_column = '', agg_function = 'sum'){
   renderLeaflet({
     tab_name <- paste(event_type, tab_name_suffix, sep = '')
     leafletId <- paste( tab_name, leafletId_suffix,sep="")
     
+
     #user_settings <- user_settings()
-    df <- mapData(event_data(),event_type = event_type, color_column = color_column,group_by_src = group_by_src)
+    # df <- mapData(event_data(),event_type = event_type, value_column = value_column,group_by_src = group_by_src)
+
+    if(group_by_src){
+      location_columns_prefix <- 'src_'
+    }else{
+      location_columns_prefix <- 'dest_'
+    }
     
-    if(is.numeric(df$color_column)){
+    location_columns <- paste(sep = ''
+                              , location_columns_prefix
+                              , c('country_name'
+                                  , 'country_code'
+                                  , 'city'
+                                  , 'ip'
+                                  , 'long','lat') )  
+    # browser()
+    df <- dynamic_valueAgg(event_data = event_data, event_type = event_type
+                     , tab_name_suffix = tab_name_suffix
+                     , leafletId_suffix = leafletId_suffix
+                     , group_by_columns = location_columns
+                     , value_column = value_column
+                     , measure_column = measure_column
+                     , agg_function = agg_function) %>%
+      head(1000)
+    
+    # browser()
+      
+    value_column <- colnames(df)[length(location_columns) + 1]
+    location_grouping_column <- location_columns[1]
+    measure_column <- colnames(df)[length(location_columns) + length(value_column) + 1]
+    measure_pct_column <- colnames(df)[length(colnames(df))]
+    
+    df[is.na(df)] <- 'none/unknown'
+    
+    if(is.numeric(df[,value_column])){
       pal <- colorNumeric(
-        palette = "YlGnBu",
-        domain = df$color_column
+        palette = colour_pallets$cbPalette,
+        domain = df[,value_column]
       )
     }else{
       pal <- colorFactor(
-        palette = "YlGnBu",
-        domain = as.factor(df$color_column)
+        palette = colour_pallets$cbPalette,
+        domain = as.factor(df[,value_column])
       )
     }
     
-    df_lat <- df[!is.na( df$lat ), c('lat')]
-    df_long <- df[! is.na( df$long ), c('long')]
+    lat_col_name <- paste(location_columns_prefix,'lat',sep = '')
+    long_col_name <- paste(location_columns_prefix,'long',sep = '')
     
-    if(! is.null(df) && nrow(df_lat) > 0 && nrow(df_long) > 0){
-      lat_bounds <- c(max(df_lat$lat), min(df_lat$lat))
-      lng_bounds <- c(max(df_long$long), min(df_long$long))
+    df_lat <- df[!is.na( df[lat_col_name] ), c(lat_col_name)]
+    df_long <- df[! is.na( df[long_col_name] ), c(long_col_name)]
+    
+    if(! is.null(df) && length(df_lat) > 0 && length(df_long) > 0){
+      lat_bounds <- c(max(df_lat), min(df_lat))
+      lng_bounds <- c(max(df_long), min(df_long))
       # if only one map item
-      if(max(df_lat$lat) == min(df_lat$lat) || max(df_lat$long) == min(df_lat$long) ){
+      if(max(df_lat) == min(df_lat) || max(df_lat) == min(df_lat) ){
         print( 'only one map entry, expanding map bounds')
         lat_bounds <- lat_bounds + c(1,-1)
         lng_bounds <- lng_bounds + c(1,-1)
@@ -507,7 +535,7 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
         lat_bounds <- c(bounds$north,bounds$south)
         lng_bounds <- c(bounds$east,bounds$west)
       }
-      
+     
       m <- leaflet() %>%
         # addTiles() %>%
         # addLayersControl(
@@ -529,7 +557,7 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
         
         #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
         fitBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2]) %>%
-        addCircles_f(df) 
+        addCircles_f(df, location_grouping_column, value_column, measure_pct_column, location_columns_prefix, pal) 
       
       m
     }else{

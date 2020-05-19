@@ -211,7 +211,7 @@ valueCount <- function(event_data = all_data, event_type = event_type, value_col
   df
 }
 
-valueAgg <- function(event_data = all_data, event_type = event_type, value_column = 'event_type', measure_column , agg_function = 'sum', bounds = NULL){
+valueAgg <- function(event_data = all_data, event_type = event_type, value_column = 'event_type', measure_column = '' , agg_function = 'sum', bounds = NULL){
   
   if(event_type == '' || event_type == 'all')
     event_type <- event_types
@@ -226,13 +226,13 @@ valueAgg <- function(event_data = all_data, event_type = event_type, value_colum
     df <- in_bounding_box(df, bounds, prefix = 'dest_')
   }
   
-  
   # length(measure_column)
   # for(measure in measure_column){
   #   measure
   # }
  
   # df$value_column <- df[,value_column[1]]
+  
   
   df$measure_column <- as.numeric(df[,measure_column[1]])
   if(length(measure_column) >= 2){
@@ -268,6 +268,65 @@ valueAgg <- function(event_data = all_data, event_type = event_type, value_colum
 
   df
 }
+
+
+
+dynamic_valueAgg <- function(event_data = all_data, event_type = "all", tab_name_suffix = '', leafletId_suffix = '', value_column = 'event_type', group_by_columns = c(), measure_column = '' , agg_function = 'sum'){
+  tab_name <- paste(event_type, tab_name_suffix, sep = '')
+  leafletId <- paste( tab_name, leafletId_suffix,sep="")
+  current_map_bounds_var <- paste('input$', leafletId, '_bounds', sep='')
+  bounds <- eval(parse(text = current_map_bounds_var))
+  
+  dynamic_value_column    <- eval(parse(text = paste('input$',tab_name ,'.value_picker', sep = '')))
+  if(! is.null(dynamic_value_column))
+    value_column <- dynamic_value_column
+  
+  combined_value_columns <- c(group_by_columns,value_column )
+  
+  dynamic_measure_column  <- eval(parse(text = paste('input$',tab_name ,'.measure_picker', sep = '')))
+  if(! is.null(dynamic_measure_column))
+    measure_column <- dynamic_measure_column
+  
+  if(measure_column == 'count'){
+    df <- valueCount(event_data = event_data
+                     # leaflet_mapdata(event_data = event_data, event_type = event_type, tab_name_suffix = tab_name_suffix)                 
+                     , event_type = event_type
+                     , value_column = combined_value_columns
+                     , bounds = bounds) %>%
+      mutate(count = n)
+    measure_total <- requestCount(event_data, event_type)
+    
+    column_heading_measure = measure_column
+  }else{
+    df <- valueAgg(event_data = event_data
+                   , event_type = event_type
+                   , value_column = combined_value_columns
+                   , measure_column = measure_column
+                   , agg_function = agg_function
+                   , bounds = bounds) 
+    
+    measure_total <- sum(df[,length(combined_value_columns)+1:length(df)])
+    
+    column_heading_measure = paste(agg_function, measure_column)
+  }
+  
+  
+  column_heading_value = simple_cap(str_replace(value_column,'_', ' '))
+  
+  column_heading_measure_pct = paste("% by ",column_heading_measure) 
+  
+  df <- df %>%
+    # mutate_at(.vars = vars('percentage'), .funs = pct_calc) %>%
+    select(group_by_columns, column_heading_value = value_column, column_heading_measure = measure_column) %>%
+    mutate(column_heading_measure_pct = column_heading_measure / measure_total * 100) %>%
+    as.data.frame()
+  
+  colnames(df)[(length(colnames(df)) - 2) : length(colnames(df))] <- c(column_heading_value,column_heading_measure,column_heading_measure_pct)
+  
+  return(df)
+}
+
+
 
 
 timeSpreadValueAgg <- function(event_data = all_data, event_type = event_type, value_column = value_column, measure_column = measure_column, agg_function = agg_function, bounds = NULL){

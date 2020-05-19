@@ -123,11 +123,11 @@ auth0_server(function(input, output, session, options) {
                              tabName = "tls_overview",
                              icon = icon("dashboard")
                  ),
-                 menuSubItem("tls Map", 
+                 menuSubItem("TLS Map", 
                              tabName = "tls_map", 
                              icon = icon("globe-asia")
                  ),
-                 menuSubItem("tls Detail", 
+                 menuSubItem("TLS Detail", 
                              tabName = "tls_table", 
                              icon = icon("table")
                  )         
@@ -451,7 +451,7 @@ print(output_type)
   output$dns.download_csv <-downloadHandler_csv(event_data = dns_data, event_type = "dns")
     
   # DNS Map
-  output$dns_map_leaflet <- renderLeaflet_map_destination(event_data = dns_data, event_type = "dns", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', color_column = 'dns.type')
+  output$dns_map_leaflet <- renderLeaflet_map_destination(event_data = dns_data, event_type = "dns", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', value_column = 'dns.type', measure_column = 'count')
   observeEvent_map_button(event_type = "dns", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", buttonId = "_zoom_all_button")
   output$dns_map_table_summary <- renderTable_value(event_data = dns_data, event_type = "dns", value_column = 'dns.type', tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   output$dns_map_table_detail  <- renderDT_maptable_detail(event_data = dns_data, event_type = "dns", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
@@ -481,7 +481,7 @@ print(output_type)
   output$http_overview.table_detail  <- renderDT_maptable_detail(event_data = http_data, event_type = "http", tab_name_suffix = '_overview', leafletId_suffix = '.leaflet')
   output$http_overview.plotly <- renderPlotly_value.barplot(event_data = http_data, tab_name_suffix = '_overview', leafletId_suffix = '.leaflet', event_type = "http", agg_function = 'sum')
   output$http_overview.download_timeseries_csv <-downloadHandler_csv(event_data = http_data, tab_name_suffix = '_overview', leafletId_suffix = '.leaflet', event_type = "http")
-  output$http_overview.leaflet <- renderLeaflet_map_destination(event_data = http_data, event_type = "http", tab_name_suffix = '_overview', leafletId_suffix = '.leaflet', color_column = 'http.status')
+  output$http_overview.leaflet <- renderLeaflet_map_destination(event_data = http_data, event_type = "http", tab_name_suffix = '_overview', leafletId_suffix = '.leaflet', value_column = 'http.status', measure_column = 'count')
   
   
   # Http Timeseries
@@ -493,9 +493,9 @@ print(output_type)
   output$http.download_csv <-downloadHandler_csv(event_data = http_data, event_type = "http")
   
   # HTTP Map
-  output$http_map_leaflet <- renderLeaflet_map_destination(event_data = http_data, event_type = "http", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', color_column = 'http.status')
+  output$http_map_leaflet <- renderLeaflet_map_destination(event_data = http_data, event_type = "http", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', value_column = 'http.status', measure_column = 'count')
   observeEvent_map_button(event_type = "http", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", buttonId = "_zoom_all_button")
-  output$http_map_table_summary <- renderTable_value(event_data = http_data, event_type = "http", value_column = 'http.status', tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
+  output$http_map_table_summary <- renderTable_value(event_data = http_data, event_type = "http", value_column = 'http.status', measure_column = 'count', tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   output$http_map_table_detail  <- renderDT_maptable_detail(event_data = http_data, event_type = "http", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   output$http_map.value.1   <- renderValueBox_mapvalue(event_data = http_data, event_type = "http", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'http.hostname', opp = 'unique_count', icon_name = "question-circle",label = 'HTTP Hosts')
   output$http_map.value.2   <- renderValueBox_mapvalue(event_data = http_data, event_type = "http", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'http.http_user_agent', opp = 'unique_count' ,icon_name = "reply")
@@ -514,7 +514,7 @@ print(output_type)
   
   output$flow.report_period <- renderText_report_period()
   output$flow.destination.bubbleplot <- renderBubbles_destination(event_data = flow_data, event_type = "flow", value_column = 'dest_country_name')
-  output$flow.destination.table <- renderTable_value(event_data = flow_data, event_type = "flow", value_column = 'dest_ip')
+  output$flow.destination.table <- renderTable_value(event_data = flow_data, event_type = "flow", value_column = 'dest_ip' , measure_column = 'count', tab_name_suffix = '_dash' , leafletId_suffix = "_leaflet")
 
   # Flow Timeseries
   output$flow.plotly <- renderPlotly_value.barplot(event_data = flow_data, event_type = "flow", agg_function = 'sum')
@@ -526,9 +526,9 @@ print(output_type)
   output$flow.download_csv <-downloadHandler_csv(event_data = flow_data, event_type = "flow")
   
   # Flow Map
-  output$flow_map_leaflet <- renderLeaflet_map_destination(event_data = flow_data, event_type = "flow", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', color_column = 'app_proto')
+  output$flow_map_leaflet <- renderLeaflet_map_destination(event_data = flow_data, event_type = "flow", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', value_column = 'app_proto', measure_column = 'count')
   observeEvent_map_button(event_type = "flow", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", buttonId = "_zoom_all_button")
-  output$flow_map_table_summary <- renderTable_value(event_data = flow_data, event_type = "flow", value_column = 'app_proto', tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
+  output$flow_map_table_summary <- renderTable_value(event_data = flow_data, event_type = "flow", value_column = 'app_proto' , measure_column = 'count', tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   output$flow_map_table_detail  <- renderDT_maptable_detail(event_data = flow_data, event_type = "flow", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   output$flow_map.value.1   <- renderValueBox_mapvalue(event_data = flow_data, event_type = "flow", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'flow.bytes_toclient', opp = 'sum', icon_name = "reply", label = 'Bytes to Client')
   output$flow_map.value.2   <- renderValueBox_mapvalue(event_data = flow_data, event_type = "flow", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'flow.bytes_toserver', opp = 'sum' ,icon_name = "question-circle",label = 'Bytes to Server')
@@ -559,9 +559,9 @@ print(output_type)
   output$netflow.download_csv <-downloadHandler_csv(event_data = netflow_data, event_type = "netflow")
   
   # NetFlow Map
-  output$netflow_map_leaflet <- renderLeaflet_map_destination(event_data = netflow_data, event_type = "netflow", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', color_column = 'app_proto')
+  output$netflow_map_leaflet <- renderLeaflet_map_destination(event_data = netflow_data, event_type = "netflow", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', value_column = 'app_proto', measure_column = 'count')
   observeEvent_map_button(event_type = "netflow", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", buttonId = "_zoom_all_button")
-  output$netflow_map_table_summary <- renderTable_value(event_data = netflow_data, event_type = "netflow", value_column = 'app_proto', tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
+  output$netflow_map_table_summary <- renderTable_value(event_data = netflow_data, event_type = "netflow", value_column = 'app_proto' , measure_column = 'count', tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   output$netflow_map_table_detail  <- renderDT_maptable_detail(event_data = netflow_data, event_type = "netflow", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   output$netflow_map.value.1   <- renderValueBox_mapvalue(event_data = netflow_data, event_type = "netflow", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'netflow.bytes', opp = 'sum', icon_name = "reply", label = 'Bytes')
   output$netflow_map.value.2   <- renderValueBox_mapvalue(event_data = netflow_data, event_type = "netflow", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'netflow.pkts', opp = 'sum' ,icon_name = "question-circle",label = 'Packets')
@@ -590,9 +590,9 @@ print(output_type)
   output$alert.download_csv <-downloadHandler_csv(event_data = alert_data, event_type = "alert")
   
   # Alert Map
-  output$alert_map_leaflet <- renderLeaflet_map_destination(event_data = alert_data, event_type = "alert", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', color_column = 'alert.severity', group_by_src = TRUE)
+  output$alert_map_leaflet <- renderLeaflet_map_destination(event_data = alert_data, event_type = "alert", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', value_column = 'alert.severity', measure_column = 'count', group_by_src = TRUE)
   observeEvent_map_button(event_type = "alert", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", buttonId = "_zoom_all_button")
-  output$alert_map_table_summary <- renderTable_value(event_data = alert_data, event_type = "alert", value_column = 'alert.category', tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
+  output$alert_map_table_summary <- renderTable_value(event_data = alert_data, event_type = "alert", value_column = 'alert.category' , measure_column = 'count', tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   output$alert_map_table_detail  <- renderDT_maptable_detail(event_data = alert_data, event_type = "alert", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   output$alert_map.value.1   <- renderValueBox_mapvalue(event_data = alert_data, event_type = "alert", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'alert.severity', value = '3' ,  opp = 'count', icon_name = "reply", label = 'Notice')
   output$alert_map.value.2   <- renderValueBox_mapvalue(event_data = alert_data, event_type = "alert", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'alert.severity', value = '2' ,  opp = 'count', icon_name = "reply", label = 'Warning')
@@ -622,9 +622,9 @@ print(output_type)
   output$drop.download_csv <-downloadHandler_csv(event_data = drop_data, event_type = "drop")
   
   # Drop Map
-  output$drop_map_leaflet <- renderLeaflet_map_destination(event_data = drop_data, event_type = "drop", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', color_column = 'app_proto')
+  output$drop_map_leaflet <- renderLeaflet_map_destination(event_data = drop_data, event_type = "drop", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', value_column = 'app_proto', measure_column = 'count')
   observeEvent_map_button(event_type = "drop", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", buttonId = "_zoom_all_button")
-  output$drop_map_table_summary <- renderTable_value(event_data = drop_data, event_type = "drop", value_column = 'app_proto', tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
+  output$drop_map_table_summary <- renderTable_value(event_data = drop_data, event_type = "drop", value_column = 'app_proto' , measure_column = 'count', tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   output$drop_map_table_detail  <- renderDT_maptable_detail(event_data = drop_data, event_type = "drop", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   output$drop_map.value.1   <- renderValueBox_mapvalue(event_data = drop_data, event_type = "drop", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'flow.bytes_toclient', opp = 'sum', icon_name = "reply", label = 'Bytes to Client')
   output$drop_map.value.2   <- renderValueBox_mapvalue(event_data = drop_data, event_type = "drop", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'flow.bytes_toserver', opp = 'sum' ,icon_name = "question-circle",label = 'Bytes to Server')
@@ -654,10 +654,11 @@ print(output_type)
   output$tls.download_csv <-downloadHandler_csv(event_data = tls_data, event_type = "tls")
   
   # TLS Map
-  output$tls_map_leaflet <- renderLeaflet_map_destination(event_data = tls_data, event_type = "tls", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', color_column = 'tls.version')
+  output$tls_map_leaflet <- renderLeaflet_map_destination(event_data = tls_data, event_type = "tls", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', value_column = 'tls.version', measure_column = 'count')
   observeEvent_map_button(event_type = "tls", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", buttonId = "_zoom_all_button")
-  output$tls_map_table_summary <- renderTable_value(event_data = tls_data, event_type = "tls", value_column = 'tls.version')
+  output$tls_map_table_summary <- renderTable_value(event_data = tls_data, event_type = "tls", value_column = 'tls.version' , measure_column = 'count', tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   
+    
   output$tls_map_table_detail  <- renderDT_maptable_detail(event_data = tls_data, event_type = "tls", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   output$tls_map.value.1   <- renderValueBox_mapvalue(event_data = tls_data, event_type = "tls", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'tls.sni', opp = 'count', icon_name = "reply", label = 'TLS Requests')
   output$tls_map.value.2   <- renderValueBox_mapvalue(event_data = tls_data, event_type = "tls", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'tls.sni', opp = 'unique_count' ,icon_name = "question-circle",label = 'TLS Hosts')
