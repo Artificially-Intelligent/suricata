@@ -139,14 +139,17 @@ tabItem_timeseries <- function(event = "all") {
               pickerInput(
                 inputId = value_picker_inputId,
                 label = "Value Column", 
-                
-                choices = c(colnames(
-                  data_row_template[,!unlist(lapply(data_row_template, is.numeric))]
-                                     )[3:14],
-                            colnames(select(
-                              data_row_template[unlist(lapply(data_row_template,is.factor))]
-                              , matches(paste0("^(", paste(event, collapse="|"), ")"))))
-                ),
+                {
+                  choices = c(colnames(data_row_template[, !unlist(lapply(data_row_template, is.numeric))])[3:14],
+                              colnames(select(data_row_template[unlist(lapply(data_row_template, is.factor))]
+                                              , matches(
+                                                paste0("^(", paste(event, collapse = "|"), ")")
+                                              ))))
+                  names(choices) <-
+                    janitor::make_clean_names(choices, case = "title")
+                  choices
+                }
+                ,
                 options = list(
                   `live-search` = TRUE)
               )
@@ -157,11 +160,17 @@ tabItem_timeseries <- function(event = "all") {
               pickerInput(
                 inputId = measure_picker_inputId,
                 label = "Measure",
-                choices = c('count',
-                  colnames(select(
-                  data_row_template[unlist(lapply(data_row_template,is.numeric))]
-                  , matches(paste0("^(", paste(event, collapse="|"), ")")))
-                )),
+                {
+                  choices = c('count',
+                              colnames(select(data_row_template[unlist(lapply(data_row_template, is.numeric))]
+                                              , matches(
+                                                paste0("^(", paste(event, collapse = "|"), ")")
+                                              ))))
+                  names(choices) <-
+                    janitor::make_clean_names(choices, case = "title")
+                  choices
+                }
+                ,
                 options = list(
                   `live-search` = TRUE)
               )
@@ -172,7 +181,13 @@ tabItem_timeseries <- function(event = "all") {
               pickerInput(
                 inputId = display_picker_inputId,
                 label = "Measure",
-                choices = c('line','bar'),
+                {
+                  choices = c('line','bar')
+                  names(choices) <-
+                    janitor::make_clean_names(choices, case = "title")
+                  choices
+                }
+                ,
                 options = list(
                   `live-search` = TRUE)
               )
@@ -235,14 +250,17 @@ tabItem_overview <- function(event = "all") {
                      pickerInput(
                        inputId = value_picker_inputId,
                        label = "Value Column", 
-                       
-                       choices = c(colnames(
-                         data_row_template[,!unlist(lapply(data_row_template, is.numeric))]
-                       )[3:14],
-                       colnames(select(
-                         data_row_template[unlist(lapply(data_row_template,is.factor))]
-                         , matches(paste0("^(", paste(event, collapse="|"), ")"))))
-                       ),
+                       {
+                         choices = c(colnames(data_row_template[, !unlist(lapply(data_row_template, is.numeric))])[3:14],
+                                     colnames(select(data_row_template[unlist(lapply(data_row_template, is.factor))]
+                                                     , matches(
+                                                       paste0("^(", paste(event, collapse = "|"), ")")
+                                                     ))))
+                         names(choices) <-
+                           janitor::make_clean_names(choices, case = "title")
+                         choices
+                       }
+                       ,
                        options = list(
                          `live-search` = TRUE)
                      )
@@ -267,7 +285,13 @@ tabItem_overview <- function(event = "all") {
                      pickerInput(
                        inputId = display_picker_inputId,
                        label = "Measure",
-                       choices = c('line','bar'),
+                       {
+                         choices = c('line','bar')
+                         names(choices) <-
+                           janitor::make_clean_names(choices, case = "title")
+                         choices
+                       }
+                       ,
                        options = list(
                          `live-search` = TRUE)
                      )

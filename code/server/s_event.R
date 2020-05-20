@@ -475,7 +475,7 @@ observeEvent_map_button <- function(event_type = "all", tab_name_suffix = '_map'
   })
 }
 
-renderLeaflet_map_destination <- function(event_data = all_data, event_type = "all", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', value_column = 'event_type',group_by_src = FALSE,  measure_column = '', agg_function = 'sum'){
+renderLeaflet_map_destination <- function(event_data = all_data, event_type = "all", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', value_column = 'event_type',group_by_src = FALSE,  measure_column = '', attribute_columns = c(), agg_function = 'sum'){
   renderLeaflet({
     tab_name <- paste(event_type, tab_name_suffix, sep = '')
     leafletId <- paste( tab_name, leafletId_suffix,sep="")
@@ -502,7 +502,7 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
       df <- dynamic_valueAgg(event_data = event_data, event_type = event_type
                      , tab_name_suffix = tab_name_suffix
                      , leafletId_suffix = leafletId_suffix
-                     , group_by_columns = location_columns
+                     , group_by_columns = c(location_columns,attribute_columns)
                      , value_column = value_column
                      , measure_column = measure_column
                      , agg_function = agg_function
@@ -512,6 +512,12 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
     location_grouping_column <- location_columns[1]
     measure_column <- colnames(df)[length(location_columns) + length(value_column) + 1]
     measure_pct_column <- colnames(df)[length(colnames(df))]
+    
+    # Set default values where missing
+    lat_col_name = paste(sep="",location_columns_prefix,'lat')
+    long_col_name = paste(sep="",location_columns_prefix,'long')
+    df[is.na(df[[lat_col_name]]),lat_col_name] <- 0
+    df[is.na(df[[long_col_name]]),long_col_name] <- 0
     
     df[is.na(df)] <- 'none/unknown'
     
@@ -526,7 +532,6 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
         domain = as.factor(df[,value_column])
       )
     }
-    
     
     # current_map_bounds_var <- paste('input$', leafletId, '_bounds', sep='')
     # bounds <- isolate(eval(parse(text = current_map_bounds_var)))

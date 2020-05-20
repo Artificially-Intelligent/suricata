@@ -8,7 +8,7 @@ options(shiny.port = shiny_port
 
 shiny_server <- function(input, output, session, options) {
   
-  default_tab = "http_dash"
+  default_tab = "shiny-tab-all_dash"
   current_version = "0.01"
   
   ####--UI BLOCK----------------------------------------------------------------------------------------------
@@ -45,8 +45,232 @@ shiny_server <- function(input, output, session, options) {
     )
   })
   
+  output$res <- renderText({
+    paste("You've selected:", input$tabs)
+  })
+  
+  
+  output$menu <- renderMenu({
+    sidebarMenu(
+      # Setting id makes input$tabs give the tabName of currently-selected tab
+      id = "tabs",
+      
+      menuItem(
+        "All Events",
+        icon = icon("cube"),
+        menuSubItem(
+          "Event Dashboard",
+          tabName = "all_dash",
+          selected = TRUE,
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "Event Detail",
+          tabName = "all_table",
+          icon = icon("table")
+        )
+      ),
+      menuItem(
+        "Http",
+        icon = icon("cube"),
+        menuSubItem(
+          "Http Dashboard",
+          tabName = "http_dash",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "HTTP Timeseries",
+          tabName = "http_timeseries",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "Http Overview",
+          tabName = "http_overview",
+          
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "Http Map",
+          tabName = "http_map",
+          icon = icon("globe-asia")
+        ),
+        menuSubItem("Http Detail",
+                    tabName = "http_table",
+                    icon = icon("table"))
+      ),
+      menuItem(
+        "DNS",
+        icon = icon("cube"),
+        menuSubItem(
+          "DNS Dashboard",
+          tabName = "dns_dash",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "DNS Timeseries",
+          tabName = "dns_timeseries",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "DNS Overview",
+          tabName = "dns_overview",
+          
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "DNS Map",
+          tabName = "dns_map",
+          icon = icon("globe-asia")
+        ),
+        menuSubItem("DNS Detail",
+                    tabName = "dns_table",
+                    icon = icon("table"))
+      ),
+      menuItem(
+        "TLS",
+        icon = icon("cube"),
+        menuSubItem(
+          "TLS Dashboard",
+          tabName = "tls_dash",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "TLS Timeseries",
+          tabName = "tls_timeseries",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "TLS Overview",
+          tabName = "tls_overview",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "TLS Map",
+          tabName = "tls_map",
+          icon = icon("globe-asia")
+        ),
+        menuSubItem("TLS Detail",
+                    tabName = "tls_table",
+                    icon = icon("table"))
+      ),
+      menuItem(
+        "Flow",
+        icon = icon("code-branch"),
+        menuSubItem(
+          "Flow Dashboard",
+          tabName = "flow_dash",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "Flow Timeseries",
+          tabName = "flow_timeseries",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "Flow Overview",
+          tabName = "flow_overview",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "Flow Map",
+          tabName = "flow_map",
+          icon = icon("globe-asia")
+        ),
+        menuSubItem("Flow Detail",
+                    tabName = "flow_table",
+                    icon = icon("table"))
+      ),
+      menuItem(
+        "NetFlow",
+        icon = icon("code-branch"),
+        menuSubItem(
+          "NetFlow Dashboard",
+          tabName = "netflow_dash",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "NetFlow Timeseries",
+          tabName = "netflow_timeseries",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "Netflow Overview",
+          tabName = "netflow_overview",
+          
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "NetFlow Map",
+          tabName = "netflow_map",
+          icon = icon("globe-asia")
+        ),
+        menuSubItem(
+          "NetFlow Detail",
+          tabName = "netflow_table",
+          icon = icon("table")
+        )
+      ),
+      menuItem(
+        "Traffic Alerts",
+        icon = icon("exclamation-triangle"),
+        menuSubItem(
+          "Alert Dashboard",
+          tabName = "alert_dash",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "Alert Timeseries",
+          tabName = "alert_timeseries",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "Alert Overview",
+          tabName = "alert_overview",
+          
+          icon = icon("dashboard")
+        ),
+        menuSubItem("Alert Map",
+                    tabName = "alert_map",
+                    icon = icon("globe")),
+        menuSubItem(
+          "Alert Detail",
+          tabName = "alert_table",
+          icon = icon("table")
+        )
+      ),
+      menuItem(
+        "Traffic Drops",
+        icon = icon("bomb"),
+        menuSubItem(
+          "Drop Dashboard",
+          tabName = "drop_dash",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "Drop Timeseries",
+          tabName = "drop_timeseries",
+          icon = icon("dashboard")
+        ),
+        menuSubItem(
+          "Drop Overview",
+          tabName = "drop_overview",
+          
+          icon = icon("dashboard")
+        ),
+        menuSubItem("Drop Map",
+                    tabName = "drop_map",
+                    icon = icon("globe")),
+        menuSubItem("Drop Detail",
+                    tabName = "drop_table",
+                    icon = icon("table"))
+      )
+    )
+  })
+  
+  
   output$ui_sidebar <- renderUI({
     dashboardSidebar(
+      textOutput("res"),
       shinyWidgets::sliderTextInput("data_refresh_rate","Data refresh rate (seconds)",
                      choices=c(0, 1, 3, 5, 10, 15, 30, 60, 120, 180,300,600,900,1800,3600,86400,"disabled"),
                      selected=60, grid = T),
@@ -492,7 +716,7 @@ print(output_type)
   output$http.download_csv <-downloadHandler_csv(event_data = http_data, event_type = "http")
   
   # HTTP Map
-  output$http_map_leaflet <- renderLeaflet_map_destination(event_data = http_data, event_type = "http", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', value_column = 'http.status', measure_column = 'count')
+  output$http_map_leaflet <- renderLeaflet_map_destination(event_data = http_data, event_type = "http", tab_name_suffix = '_map', leafletId_suffix = '_leaflet', value_column = 'http.status', measure_column = 'count', attribute_columns =c('http.hostname') )
   observeEvent_map_button(event_type = "http", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", buttonId = "_zoom_all_button")
   output$http_map_table_summary <- renderTable_value(event_data = http_data, event_type = "http", value_column = 'http.status', measure_column = 'count', tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")
   output$http_map_table_detail  <- renderDT_maptable_detail(event_data = http_data, event_type = "http", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet")

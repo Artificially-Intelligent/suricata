@@ -14,10 +14,19 @@ add_markers <- function(map, df, group_by_column,  color_column, measure_column,
   if(nrow(df)==0)
     return(map)
   
+  # browser()
+  
+  # 
+  # df$label <- unlist(cbind(
+  # as_tibble(df) %>% select(!starts_with(location_columns_prefix) & contains("name") ),
+  # as_tibble(df) %>% select(starts_with(location_columns_prefix) & contains("ip") ),
+  # as_tibble(df) %>% select(starts_with(location_columns_prefix) & contains("name") )
+  # )[1])
+  
   #add column for popup_html window
   df <- add_popup_html(df, location_columns_prefix)
   map %>% addMarkers(data = df, 
-                           label = df[[paste(sep = "", location_columns_prefix, "ip")]],
+                           label = df[,"label"],
                            lng = df[,paste(sep='', location_columns_prefix, 'long')],
                            lat = df[,paste(sep='', location_columns_prefix, 'lat')],
                            layerId = df[,group_by_column],
@@ -49,17 +58,31 @@ add_popup_html <- function(df, location_columns_prefix) {
     return(df)
   }
   
-  df_mod <- df %>%
+  df_mod <- df
+  
+  df_mod$label <- unlist(cbind(
+    as_tibble(df) %>% select(!starts_with(location_columns_prefix) & contains("label") ),
+    as_tibble(df) %>% select(!starts_with(location_columns_prefix) & contains("name") ),
+    as_tibble(df) %>% select(starts_with(location_columns_prefix) & contains("ip") ),
+    as_tibble(df) %>% select(starts_with(location_columns_prefix) & contains("name") )
+  )[1])
+  
+  df_mod <- df_mod %>%
     mutate(
+      popup_html_title = paste(
+        '<div class="map_popup_title"><h4>',
+        df_mod[["label"]],
+        '</h4></div>'
+      ),
       popup_html_location = paste(
-        '<div class="alert_details_name"><h4>',
+        '<div class="map_popup_text"><h5>',
         df[[paste(sep = "", location_columns_prefix, "city")]],
         " (",
         df[[paste(sep = "", location_columns_prefix, "country_code")]],
-        ')<h4></div>'
+        ')</h5></div>'
       ),
       
-      popup_html_ip = paste('<div class="alert_details">IP Address(s)',
+      popup_html_ip = paste('<div class="map_popup_text">IP Address(s)',
                             df[[paste(sep = "", location_columns_prefix, "ip")]],
                             '</div>'),
       
@@ -70,9 +93,7 @@ add_popup_html <- function(df, location_columns_prefix) {
                                    function(x) {
                                      paste(
                                        sep = "",
-                                       '<div class="',
-                                       janitor::make_clean_names(x),
-                                       '">',
+                                       '<div class="map_popup_extratext">',
                                        janitor::make_clean_names(x, case = "title"),
                                        ': ',
                                        case_when(
@@ -86,7 +107,8 @@ add_popup_html <- function(df, location_columns_prefix) {
   df_mod$popup_html_other <-
     apply(df_other[, names(df_other)] , 1 , paste , collapse = "")
   df_mod <- df_mod %>%
-    mutate(popup_html = paste(popup_html_location,
+    mutate(popup_html = paste(popup_html_title,
+                              popup_html_location,
                               popup_html_ip,
                               popup_html_other))
   return(df_mod)

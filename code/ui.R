@@ -26,7 +26,15 @@ ui <- dashboardPagePlus(
                           rightSidebarIcon = "gears",
                           userOutput("user")
                         ),
-              uiOutput("ui_sidebar"),
+                        dashboardSidebar(
+                          sidebarMenuOutput("menu"),
+                          shinyWidgets::sliderTextInput("data_refresh_rate","Data refresh rate (seconds)",
+                                                        choices=c(0, 1, 3, 5, 10, 15, 30, 60, 120, 180,300,600,900,1800,3600,86400,"disabled"),
+                                                        selected=60, grid = T),
+                          textOutput("res")
+                        ),
+                        
+              # uiOutput("ui_sidebar"),
               rightsidebar = uiOutput("ui_rightsidebar"),
               dashboardBody(
                 includeCSS("www/ui.css"),
