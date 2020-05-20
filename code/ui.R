@@ -17,7 +17,7 @@ ui <- dashboardPagePlus(
                             tags$span(class = "logo-lg", project_name), 
                             tags$img(src = "./img/artificially-intelligent.png"),
                             use_waiter(),
-                            waiter_show_on_load( tagList(
+                            show_waiter_on_load( tagList(
                               spin_fading_circles(),
                               div(class='loading-text',"Loading Recent Traffic Data...")
                             ))

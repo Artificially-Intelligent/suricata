@@ -35,12 +35,18 @@ addCircles_f <- function(map, df, group_by_column,  color_column, measure_column
               ,color = levels(factor(pal(df[,color_column])))
               ,labels = levels(factor(df[,color_column]))
               ,  group = "circles"
-              )  %>%
+              ) %>%
     addLayersControl(position = 'topleft',overlayGroups = c("dest_markers"))
 }
 
 #return df with new columns added containing htlm formatted text
 add_popup_html <- function(df, location_columns_prefix) {
+  if(nrow(df) == 0){
+    df$popup_html = character()
+    return(df)
+  }
+    
+  
   df_mod <- df %>%
     mutate(
       popup_html_location = paste(

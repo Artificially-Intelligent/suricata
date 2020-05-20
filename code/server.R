@@ -3,9 +3,10 @@
 # Shiny server options
 options(shiny.port = shiny_port
         ,auth0_disable = (! using_auth)
-        ,warn = -1)
+        ,warn = -1
+        ,shiny.reactlog = TRUE)
 
-auth0_server(function(input, output, session, options) {
+shiny_server <- function(input, output, session, options) {
   
   default_tab = "http_dash"
   current_version = "0.01"
@@ -111,7 +112,7 @@ auth0_server(function(input, output, session, options) {
                  )         
         ),
         menuItem("TLS",icon = icon("cube"),
-                 menuSubItem("tls Dashboard", 
+                 menuSubItem("TLS Dashboard", 
                              tabName = "tls_dash", 
                              icon = icon("dashboard")
                  ),
@@ -665,4 +666,6 @@ print(output_type)
   # output$tls_map.value.3   <- renderValueBox_mapvalue(event_data = tls_data, event_type = "tls", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'tls.pkts_toclient', opp = 'sum' ,icon_name = "reply", label = 'Packets to Client')
   # output$tls_map.value.4   <- renderValueBox_mapvalue(event_data = tls_data, event_type = "tls", tab_name_suffix = '_map' , leafletId_suffix = "_leaflet", value_column = 'tls.pkts_toserver', opp = 'sum' ,icon_name = "question-circle",label = 'Packets to Server')
 }
-, info = a0_info)  
+
+
+auth0_server( shiny_server, info = a0_info)  
