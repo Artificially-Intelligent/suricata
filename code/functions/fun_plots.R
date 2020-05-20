@@ -7,36 +7,39 @@ weather_plot_f <- function(df){
     dyHighlight(highlightSeriesOpts = list(strokeWidth = 2))
 }
 
-addCircles_f <- function(map, df, group_by_column,  color_column, measure_column, location_columns_prefix = 'dest_', pal = pal){
+add_markers <- function(map, df, group_by_column,  color_column, measure_column, location_columns_prefix = 'dest_', pal = pal){
 
   if(length(levels(factor(pal(df[,color_column])))) != length(levels(factor(df[,color_column]))) )
     browser()
+  if(nrow(df)==0)
+    return(map)
   
   #add column for popup_html window
   df <- add_popup_html(df, location_columns_prefix)
-  
-  map %>% addCircleMarkers(data = df, 
+  map %>% addMarkers(data = df, 
+                           label = df[[paste(sep = "", location_columns_prefix, "ip")]],
                            lng = df[,paste(sep='', location_columns_prefix, 'long')],
                            lat = df[,paste(sep='', location_columns_prefix, 'lat')],
                            layerId = df[,group_by_column],
                            group = "dest_markers",
-                           stroke = FALSE,
-                           fillOpacity = 0.8,
-                           radius =  round(4 + ( round(df[,measure_column]/100 , 2)) * 18),
-                           fillColor = ~pal(df[,color_column]),
-                           color = ~pal(df[,color_column]),
+                           icon = NULL,
+                           # stroke = FALSE,
+                           # fillOpacity = 0.8,
+                           # radius =  round(4 + ( round(df[,measure_column]/100 , 2)) * 18),
+                           # fillColor = ~pal(df[,color_column]),
+                           # color = ~pal(df[,color_column]),
                            #icon = ~map_icons[df$pt_domr],
-                           #clusterOptions = markerClusterOptions(iconCreateFunction=JS(clusterJS)) ,
+                           clusterOptions = markerClusterOptions(iconCreateFunction=JS(clusterJS)) ,
                            popup = df[,"popup_html"],
-                           popupOptions = popupOptions(closeButton = FALSE), 
-                           options = pathOptions(pane = "top_circles")
-  )  %>%  addLegend(position = 'topright'
-            
-              ,color = levels(factor(pal(df[,color_column])))
-              ,labels = levels(factor(df[,color_column]))
-              ,  group = "circles"
-              ) %>%
-    addLayersControl(position = 'topleft',overlayGroups = c("dest_markers"))
+                           popupOptions = popupOptions(closeButton = FALSE)
+                     # , 
+                     #       options = pathOptions(pane = "top_circles")
+  ) %>%  addLegend(
+    position = 'topright',
+    color = levels(factor(pal(df[, color_column]))),
+    labels = levels(factor(df[, color_column])),
+    group = "dest_markers"
+  )
 }
 
 #return df with new columns added containing htlm formatted text
@@ -45,7 +48,6 @@ add_popup_html <- function(df, location_columns_prefix) {
     df$popup_html = character()
     return(df)
   }
-    
   
   df_mod <- df %>%
     mutate(

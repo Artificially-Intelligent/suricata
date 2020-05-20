@@ -1,5 +1,18 @@
 ### EVENTS 
 
+observeEvent({
+  input$http_map_leaflet_zoom
+  input$http_map_leaflet_center
+}, {
+  v$last_lng = input$http_map_leaflet_center$lng
+  v$last_lat = input$http_map_leaflet_center$lat
+  v$last_zoom <- input$http_map_leaflet_zoom
+  # save_user_settings(u)
+  
+  print(paste("map zoom:",input$http_map_leaflet_zoom))
+  
+})
+
 # output$event.rate <- 
 renderValueBox_rate <- function(event_data = all_data, event_type = "all", tab_name_suffix = ''){
   # event_count <- latestRequestCount(event_stream, event_type)
@@ -163,7 +176,7 @@ renderBubbles_value <- renderBubbles_destination <- function(event_data = all_da
 }
 
 
-renderTable_value <- function(event_data = all_data, event_type = "all", tab_name_suffix = '', leafletId_suffix = '', value_column = 'event_type', measure_column = 'count', agg_function = 'sum'){
+renderTable_value <- function(event_data = all_data, event_type = "all", tab_name_suffix = '', leafletId_suffix = '', value_column = 'event_type', measure_column = 'count', agg_function = 'sum', dynamic_update = TRUE){
   renderTable({
     # tab_name <- paste(event_type, tab_name_suffix, sep = '')
     # leafletId <- paste( tab_name, leafletId_suffix,sep="")
@@ -205,7 +218,8 @@ renderTable_value <- function(event_data = all_data, event_type = "all", tab_nam
                            , leafletId_suffix = leafletId_suffix
                            , value_column = value_column
                            , measure_column = measure_column
-                           , agg_function = agg_function) %>%
+                           , agg_function = agg_function
+                           , isolate = ! dynamic_update) %>%
       head(15)
     
   }, digits = 1, options = list(scrollX = TRUE))
@@ -455,6 +469,7 @@ observeEvent_map_button <- function(event_type = "all", tab_name_suffix = '_map'
     lat <- 0
     lng <- 0
     my_zoom <- 1
+    
     leafletProxy(leafletId) %>%
       flyTo(lng, lat, zoom = my_zoom)
   })
@@ -482,15 +497,16 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
                                   , 'city'
                                   , 'ip'
                                   , 'long','lat') )  
-    # browser()
-    df <- dynamic_valueAgg(event_data = event_data, event_type = event_type
+    
+ 
+      df <- dynamic_valueAgg(event_data = event_data, event_type = event_type
                      , tab_name_suffix = tab_name_suffix
                      , leafletId_suffix = leafletId_suffix
                      , group_by_columns = location_columns
                      , value_column = value_column
                      , measure_column = measure_column
-                     , agg_function = agg_function) %>%
-      head(1000)
+                     , agg_function = agg_function
+                     , isolate = TRUE)
       
     value_column <- colnames(df)[length(location_columns) + 1]
     location_grouping_column <- location_columns[1]
@@ -511,62 +527,85 @@ renderLeaflet_map_destination <- function(event_data = all_data, event_type = "a
       )
     }
     
-    lat_col_name <- paste(location_columns_prefix,'lat',sep = '')
-    long_col_name <- paste(location_columns_prefix,'long',sep = '')
     
-    df_lat <- df[!is.na( df[lat_col_name] ), c(lat_col_name)]
-    df_long <- df[! is.na( df[long_col_name] ), c(long_col_name)]
-    
-    if(! is.null(df) && length(df_lat) > 0 && length(df_long) > 0){
+    # current_map_bounds_var <- paste('input$', leafletId, '_bounds', sep='')
+    # bounds <- isolate(eval(parse(text = current_map_bounds_var)))
+    # 
+    # new_map_bound = FALSE
+    # if (!is.null(bounds)) {
+    #   new_map_bound = TRUE
+    #   lat_bounds <- c(bounds$north, bounds$south)
+    #   lng_bounds <- c(bounds$east, bounds$west)
+    # } else
+      {
+      # Map has no bound set so scale to data
+      lat_col_name <- paste(location_columns_prefix, 'lat', sep = '')
+      long_col_name <-
+        paste(location_columns_prefix, 'long', sep = '')
       
-      lat_bounds <- c(max(df_lat), min(df_lat))
-      lng_bounds <- c(max(df_long), min(df_long))
-      print(paste("lat_bounds ",lat_bounds, "lng_bounds ",lng_bounds , collapse = ''))
-    
-      # if only one map item
-      if(max(df_lat) == min(df_lat) || max(df_lat) == min(df_lat) ){
-        print( 'only one map entry, expanding map bounds')
-        lat_bounds <- lat_bounds + c(1,-1)
-        lng_bounds <- lng_bounds + c(1,-1)
-      }
+      df_lat <- df[!is.na(df[lat_col_name]), c(lat_col_name)]
+      df_long <- df[!is.na(df[long_col_name]), c(long_col_name)]
       
-      current_map_bounds_var <- paste('input$', leafletId, '_bounds', sep='')
-      # current_map_bounds_var <- paste('input$', event_type,'_map_leaflet_bounds',sep='')
-      bounds <- isolate(eval(parse(text = current_map_bounds_var)))
-      if(!is.null(bounds)){
-        lat_bounds <- c(bounds$north,bounds$south)
-        lng_bounds <- c(bounds$east,bounds$west)
-      }
-     
-      m <- leaflet() %>%
-        # addTiles() %>%
-        # addLayersControl(
-        #   baseGroups = c("Hide overlays", "Agriculture Employee Ratio", "Mining Employee Ratio"),
-        #   options = layersControlOptions(collapsed = TRUE)
-        # ) %>%
-        addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
-        # addPolylines(
-        #   group = paste(event_type,"map_line", sep = '.'),
-        #   lat = ~lat_vector,
-        #   lng = ~long_vector,
-        #   color = ~pal(gdp_md_est),
-        #   fillColor = color,
-        #   stroke = TRUE, 
-        #   smoothFactor = 1, 
-        #   fillOpacity = 0.2
-        # ) %>%
-        addMapPane("top_circles", zIndex = 430) %>%
+      if (!is.null(df) && length(df_lat) > 0 && length(df_long) > 0) {
+        new_map_bound = TRUE
+        lat_bounds <- c(max(df_lat), min(df_lat))
+        lng_bounds <- c(max(df_long), min(df_long))
         
-        #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
-        fitBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2]) %>%
-        addCircles_f(df, location_grouping_column, value_column, measure_pct_column, location_columns_prefix, pal) 
-      
-      m
-    }else{
-      leaflet() %>%
-        addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
-        addMapPane("top_circles", zIndex = 430)
+        # if only one map item
+        if (max(df_lat) == min(df_lat) ||
+            max(df_lat) == min(df_lat)) {
+          print('only one map entry, expanding map bounds')
+          lat_bounds <- lat_bounds + c(1, -1)
+          lng_bounds <- lng_bounds + c(1, -1)
+        }
+        print(paste(
+          "new bounds:",
+          paste("lat_bounds ", lat_bounds, collapse = ''),
+          paste("lng_bounds ", lng_bounds , collapse = '')
+        ))
+      }
     }
+    
+    m <- leaflet() %>%
+      # addTiles() %>%
+      # addLayersControl(
+      #   baseGroups = c("Hide overlays", "Agriculture Employee Ratio", "Mining Employee Ratio"),
+      #   options = layersControlOptions(collapsed = TRUE)
+      # ) %>%
+      addProviderTiles(providers$Esri.WorldGrayCanvas) %>%
+      # addPolylines(
+      #   group = paste(event_type,"map_line", sep = '.'),
+      #   lat = ~lat_vector,
+      #   lng = ~long_vector,
+      #   color = ~pal(gdp_md_est),
+      #   fillColor = color,
+      #   stroke = TRUE,
+      #   smoothFactor = 1,
+      #   fillOpacity = 0.2
+      # ) %>%
+      # addMapPane("top_circles", zIndex = 430) %>%
+    #addOverlays_abs(overlay_groups, poa_shapes, abs_shapes) %>%
+    add_markers(
+      df,
+      location_grouping_column,
+      value_column,
+      measure_pct_column,
+      location_columns_prefix,
+      pal
+    )  %>%
+      addLayersControl(position = 'topleft',
+                       overlayGroups = c("dest_markers")) 
+    # browser()
+    
+    #  m <- m %>%
+    #   setView(lng = isolate(v$last_lng),
+    #           lat = isolate(v$last_lat),
+    #           zoom = isolate(v$last_zoom)
+    # )
+    
+       # if(new_map_bound)
+       #   m <- m %>% flyToBounds(lng_bounds[1], lat_bounds[1], lng_bounds[2], lat_bounds[2])
+      return(m)
   })
 }
 
@@ -589,6 +628,7 @@ leaflet_mapdata <- function(event_data = all_data, event_type = "all", tab_name_
   # }
 }
 
+
 leaflet_mapdata_filter <- function(df, event_type = "all", tab_name_suffix = '_map', leafletId_suffix = '_leaflet'){
   tab_name <- paste(event_type, tab_name_suffix, sep = '')
   leafletId <- paste( tab_name, leafletId_suffix,sep="")
@@ -599,7 +639,7 @@ leaflet_mapdata_filter <- function(df, event_type = "all", tab_name_suffix = '_m
            ip = dest_ip, long = dest_long,lat = dest_lat)
   
   current_map_bounds_var <- paste('input$', leafletId, '_bounds', sep='')
-  bounds <- eval(parse(text = current_map_bounds_var))
+  bounds <- isolate(eval(parse(text = current_map_bounds_var)))
   if (is.null(bounds)){
     df
   } else {

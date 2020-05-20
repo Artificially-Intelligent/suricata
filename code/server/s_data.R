@@ -279,21 +279,24 @@ valueAgg <- function(event_data = all_data, event_type = event_type, value_colum
 
 
 
-dynamic_valueAgg <- function(event_data = all_data, event_type = "all", tab_name_suffix = '', leafletId_suffix = '', value_column = 'event_type', group_by_columns = c(), measure_column = '' , agg_function = 'sum'){
+dynamic_valueAgg <- function(event_data = all_data, event_type = "all", tab_name_suffix = '', leafletId_suffix = '', value_column = 'event_type', group_by_columns = c(), measure_column = '' , agg_function = 'sum', isolate = FALSE){
   tab_name <- paste(event_type, tab_name_suffix, sep = '')
   leafletId <- paste( tab_name, leafletId_suffix,sep="")
   current_map_bounds_var <- paste('input$', leafletId, '_bounds', sep='')
-  bounds <- eval(parse(text = current_map_bounds_var))
+  bounds <- NULL
   
-  dynamic_value_column    <- eval(parse(text = paste('input$',tab_name ,'.value_picker', sep = '')))
-  if(! is.null(dynamic_value_column))
-    value_column <- dynamic_value_column
+  if(!isolate){
+    bounds <- eval(parse(text = current_map_bounds_var))
   
+    dynamic_measure_column  <- eval(parse(text = paste('input$',tab_name ,'.measure_picker', sep = '')))
+    if(! is.null(dynamic_measure_column))
+      measure_column <- dynamic_measure_column
+    
+    dynamic_value_column    <- eval(parse(text = paste('input$',tab_name ,'.value_picker', sep = '')))
+    if(! is.null(dynamic_value_column))
+      value_column <- dynamic_value_column
+  }
   combined_value_columns <- c(group_by_columns,value_column )
-  
-  dynamic_measure_column  <- eval(parse(text = paste('input$',tab_name ,'.measure_picker', sep = '')))
-  if(! is.null(dynamic_measure_column))
-    measure_column <- dynamic_measure_column
 
   if(measure_column == 'count'){
     column_heading_measure = measure_column

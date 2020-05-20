@@ -305,12 +305,10 @@ shiny_server <- function(input, output, session, options) {
     selected_tab = default_tab,
     pulse_icon_message = "",
     map_shape_id = NULL,
-    selected_alert_id = NULL
-  )
-  
-  data <- reactiveValues(
-  )
-
+    selected_alert_id = NULL,
+    last_lng = 0,
+    last_lat = 0,
+    last_zoom = 1)
   
   # Server modules 
   source('server/s_user.R', local = TRUE)

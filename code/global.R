@@ -5,21 +5,21 @@
   # Load packages and source files used in the app 
   #
   
-  library(redux)
+  library(redux) # requires libhiredis-dev
   library(shiny)
   library(dplyr)
   library(shinydashboard)
   library(plotly)
   library(waiter)
   library(tidyjson)
-  library(hrbrthemes)
+  library(hrbrthemes) # requires libcairo2-dev & libfontconfig1-dev
   library(jsonlite)
   library(googlePolylines)
   library(RMySQL)
   library(pool)
   library(stringr)
   
-  
+  library(remotes) 
   library(bubbles)        # remotes::install_github("jcheng5/bubbles")
   library(shinySignals)   # remotes::install_github("hadley/shinySignals")
   
@@ -51,6 +51,9 @@
   library(shinyAce)
   library(styler)
   library(shinyEffects)
+  library(rgeolocate)
+  
+  library(reactlog)
   
   # my_packages <- c('tidyverse','shiny', 'shinycssloaders', 
   #                  'shinydashboard', 'shinydashboardPlus', 'shinyjs', 'shinyWidgets', 
