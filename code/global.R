@@ -119,9 +119,12 @@
   
   history_folder <- file.path('..','data',redis_key)
   
-  mysql_db <- list(host = 'unraiden.local', dbname = 'suricata', user = 'suricata', password = '7tZv2Q4r%')
-  
- 
+  # mysql_db <- list(host = 'unraiden.local', dbname = 'suricata', user = 'suricata', password = '7tZv2Q4r%')
+  # 
+  # ## create db connection
+  # if(! exists('db_pool'))
+  #   db_pool <- pool::dbPool(drv = RMySQL::MySQL(), host = mysql_db$host , dbname = mysql_db$dbname, 
+  #                           user = mysql_db$user, password = mysql_db$password)
   
   # Make sure to source function and ui files here or they won't be used by the app
   # Source server files within server.R 

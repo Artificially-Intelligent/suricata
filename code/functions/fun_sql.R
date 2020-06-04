@@ -1,10 +1,5 @@
 # Functions including SQL scripts
 
-## create db connection
-if(! exists('db_pool'))
-  db_pool <- pool::dbPool(drv = RMySQL::MySQL(), host = mysql_db$host , dbname = mysql_db$dbname, 
-                        user = mysql_db$user, password = mysql_db$password)
-
 
 safe_pool <- function() {
   tryCatch({
