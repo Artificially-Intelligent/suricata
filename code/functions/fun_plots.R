@@ -25,20 +25,20 @@ add_markers <- function(map, df, group_by_column,  color_column, measure_column,
   
   #add column for popup_html window
   df <- add_popup_html(df, location_columns_prefix)
-  map %>% addMarkers(data = df, 
+  map %>% addCircleMarkers(data = df, 
                            label = df[,"label"],
                            lng = df[,paste(sep='', location_columns_prefix, 'long')],
                            lat = df[,paste(sep='', location_columns_prefix, 'lat')],
                            layerId = df[,group_by_column],
                            group = "dest_markers",
-                           icon = NULL,
-                           # stroke = FALSE,
-                           # fillOpacity = 0.8,
-                           # radius =  round(4 + ( round(df[,measure_column]/100 , 2)) * 18),
-                           # fillColor = ~pal(df[,color_column]),
-                           # color = ~pal(df[,color_column]),
-                           #icon = ~map_icons[df$pt_domr],
-                           clusterOptions = markerClusterOptions(iconCreateFunction=JS(clusterJS)) ,
+                           # icon = NULL,
+                           stroke = FALSE,
+                           fillOpacity = 0.8,
+                           radius =  round(8 + ( round(df[,measure_column]/100 , 2)) * 28),
+                           fillColor = ~pal(df[,color_column]),
+                           color = ~pal(df[,color_column]),
+                           # icon = ~map_icons[df$pt_domr],
+                           # clusterOptions = markerClusterOptions(iconCreateFunction=JS(clusterJS)) ,
                            popup = df[,"popup_html"],
                            popupOptions = popupOptions(closeButton = FALSE)
                      # , 
@@ -118,9 +118,9 @@ add_popup_html <- function(df, location_columns_prefix) {
 clusterJS <- "function (cluster) {    
                         var childCount = cluster.getChildCount(); 
                         var c = ' marker-custom-';  
-                        if (childCount < 20) {  
+                        if (childCount < 5) {  
                           c += 'small';  
-                        } else if (childCount < 50) {  
+                        } else if (childCount < 10) {  
                           c += 'medium';  
                         } else { 
                           c += 'large';  
