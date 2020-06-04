@@ -1,5 +1,6 @@
 #!/bin/sh
 
+
 if [ -z "${PORT}" ]; then
     echo "PORT not specified, using default value: 8080"
     export PORT=8080
@@ -20,6 +21,7 @@ export SHINY_GROUP=shiny
 
 ## Create non root user to run shinyserver 
 #groupadd -r --gid $PGID shinyserver && useradd --no-log-init -r -g $PGID -u $PUID shinyserver
+#
 
 # if config dir is empty copy file there for use in cont-init.d scripts
 if [ -z "$(ls -A -- "/etc/shiny-server/")" ]; then
