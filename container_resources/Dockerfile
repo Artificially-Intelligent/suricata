@@ -1,45 +1,57 @@
 # Base image https://cloud.docker.com/repository/docker/slink42/rbase_processing
 # which in turn uses the base image https://hub.docker.com/u/rocker/
 
-ARG SOURCE_IMAGE=artificiallyintelligent/shiny_lite:latest
-FROM $SOURCE_IMAGE
+ARG SRC_TAG=suricata
+ARG SRC_IMAGE=artificiallyintelligent/shiny_lite
+ARG $BLD_DATE
+ARG $SRC_REPO
+ARG $SRC_BRANCH
+ARG $SRC_COMMIT
+ARG $DEST_IMAGE
 
-# build arguments
-ARG PROJECT_ENV=dev
-ARG PROJECT=suricata
-ARG DOCKER_REPO_ROOT=artificiallyintelligent
-ARG BUILD_DATE
-ARG VERSION=0.x.x
-ARG RBASE_RELEASE
-ARG MAINTAINER=slink42
-ARG UNDERSCORE=_
+FROM $SRC_IMAGE:$SRC_TAG
 
-## set envionment
-ENV PROJECT_ENV=${ENV}
-ENV PROJECT=${PROJECT}
+ENV BUILD_DATE=$BLD_DATE
+ENV SOURCE_DOCKER_IMAGE=$SRC_IMAGE:$SRC_TAG
+ENV SOURCE_REPO=$SRC_REPO
+ENV SOURCE_BRANCH=$SRC_BRANCH
+ENV SOURCE_COMMIT=$SRC_COMMIT
+ENV DOCKER_IMAGE=$DEST_IMAGE
 
-LABEL build_version="$DOCKER_REPO_ROOT/$PROJECT_ENV$UNDERSCORE$PROJECT$UNDERSCORE$CONTAINER_ROLE version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+LABEL build_version="$SOURCE_REPO/$SOURCE_BRANCH version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 LABEL maintainer="$MAINTAINER"
-RUN echo "$DOCKER_REPO_ROOT/$PROJECT_ENV$UNDERSCORE$PROJECT$UNDERSCORE$CONTAINER_ROLE version:- ${VERSION} Build-date:- ${BUILD_DATE}"
+RUN echo "$SOURCE_REPO/$SOURCE_BRANCH version:- ${VERSION} Build-date:- ${BUILD_DATE}"
 
-## Copy R code files
-COPY /code ${WWW_DIR}
 
-## Copy static data files
-COPY /data ${DATA_DIR}
+## install package dependcies
+ARG DISCOVERY=TRUE
+ARG PROJECT_PACKAGES=redux,shiny,dplyr,shinydashboard,plotly,waiter,tidyjson,hrbrthemes,jsonlite,googlePolylines,RMySQL,pool,stringr,remotes,bubbles,shinySignals,shiny,shinycssloaders,shinydashboard,shinydashboardPlus,shinyjs,shinyWidgets,DT,dygraphs,gridExtra,RColorBrewer,leaflet,leaflet.extras,tibbletime,data.table,purrr,scales,lubridate,janitor,glue,dotenv,auth0,httr,shinyjqui,shinyAce,styler,shinyEffects,rgeolocate,reactlog
+ARG PROJECT_PACKAGES_PLUS=
+ARG DEPENDENCY=
 
-## discover and install missing R-packages
-ENV GITHUB_PACKAGES="'hadley/shinySignals','jcheng5/bubbles'"
-ENV REQUIRED_PACKAGES=redux
+ENV DISCOVER_PACKAGES=$DISCOVERY
+ENV REQUIRED_PACKAGES=$PROJECT_PACKAGES
+ENV REQUIRED_PACKAGES_PLUS=$PROJECT_PACKAGES_PLUS
+ENV DEPENDENCY_INSTALL=$DEPENDENCY
 
-RUN /usr/bin/install_package_dependencies.sh $REQUIRED_PACKAGES $REQUIRED_PACKAGES_PLUS
-RUN Rscript -e "source('/etc/shiny-server/install_discovered_packages.R'); discover_and_install(discovery_directory_root = '${WWW_DIR}', discovery = TRUE);" 
-RUN echo $FAILED_PACKAGES
-RUN /usr/bin/install_package_dependencies.sh $FAILED_PACKAGES
-RUN Rscript -e "source('/etc/shiny-server/install_discovered_packages.R'); discover_and_install(discovery_directory_root = '${WWW_DIR}');" 
+RUN chmod +x ${SCRIPTS_DIR}/cont-init.d-defaults/* \ 
+	&& ${SCRIPTS_DIR}/cont-init.d-defaults/04_expand_packages_dependencies.sh \
+	&& ${SCRIPTS_DIR}/cont-init.d-defaults/05_install_package_dependencies.sh \
+	&& ${SCRIPTS_DIR}/cont-init.d-defaults/06_install_packages.sh
 
-# install non cran packages from github hadley/shinySignals and jcheng5/bubbles
-RUN R -e "remotes::install_github(c($GITHUB_PACKAGES))"
+COPY code $WWW_DIR
 
-## Start Shiny Server ##
+RUN ${SCRIPTS_DIR}/cont-init.d-defaults/04_expand_packages_dependencies.sh \
+	&& ${SCRIPTS_DIR}/cont-init.d-defaults/05_install_package_dependencies.sh \
+	&& ${SCRIPTS_DIR}/cont-init.d-defaults/06_install_packages.sh
+
+ENV INSTALL_PACKAGE_AT_RUNTIME=FALSE
+
+# Temporary overwrite of start script, remove later
+ADD  shiny-server/shiny-server.sh  ${SCRIPTS_DIR}/shiny-server.sh
+
+## start shiny server
+RUN ln -f ${SCRIPTS_DIR}/shiny-server.sh /usr/bin/shiny-server.sh \
+	&& chmod +x /usr/bin/shiny-server.sh
+
 CMD ["/usr/bin/shiny-server.sh"]
