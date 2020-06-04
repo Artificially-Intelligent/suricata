@@ -18,6 +18,7 @@
   library(RMySQL)
   library(pool)
   library(stringr)
+  library(rredis)
   
   library(remotes) 
   library(bubbles)        # remotes::install_github("jcheng5/bubbles")

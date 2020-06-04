@@ -182,7 +182,7 @@ tabItem_timeseries <- function(event = "all") {
                 inputId = display_picker_inputId,
                 label = "Measure",
                 {
-                  choices = c('line','bar')
+                  choices = c('bar','line')
                   names(choices) <-
                     janitor::make_clean_names(choices, case = "title")
                   choices
@@ -286,7 +286,7 @@ tabItem_overview <- function(event = "all") {
                        inputId = display_picker_inputId,
                        label = "Measure",
                        {
-                         choices = c('line','bar')
+                         choices = c('bar','line')
                          names(choices) <-
                            janitor::make_clean_names(choices, case = "title")
                          choices
