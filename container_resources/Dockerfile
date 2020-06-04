@@ -24,8 +24,8 @@ RUN echo "$SOURCE_REPO/$SOURCE_BRANCH version:- ${VERSION} Build-date:- ${BUILD_
 
 
 ## install package dependcies
-ARG DISCOVERY=TRUE
-ARG PROJECT_PACKAGES=redux,shiny,dplyr,shinydashboard,plotly,waiter,tidyjson,hrbrthemes,jsonlite,googlePolylines,RMySQL,pool,stringr,remotes,bubbles,shinySignals,shiny,shinycssloaders,shinydashboard,shinydashboardPlus,shinyjs,shinyWidgets,DT,dygraphs,gridExtra,RColorBrewer,leaflet,leaflet.extras,tibbletime,data.table,purrr,scales,lubridate,janitor,glue,dotenv,auth0,httr,shinyjqui,shinyAce,styler,shinyEffects,rgeolocate,reactlog
+ARG DISCOVERY=
+ARG PROJECT_PACKAGES=redux,shiny,dplyr,shinydashboard,plotly,waiter,tidyjson,hrbrthemes,jsonlite,googlePolylines,RMySQL,pool,stringr,remotes,bubbles,shinySignals,shiny,shinycssloaders,shinydashboard,shinydashboardPlus,shinyjs,shinyWidgets,DT,dygraphs,gridExtra,RColorBrewer,leaflet,leaflet.extras,tibbletime,data.table,purrr,scales,lubridate,janitor,glue,dotenv,auth0,httr,shinyjqui,shinyAce,styler,shinyEffects,rgeolocate,reactlog,rstudioapi,utils
 ARG PROJECT_PACKAGES_PLUS=
 ARG DEPENDENCY=
 
