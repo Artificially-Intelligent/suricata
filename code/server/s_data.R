@@ -91,11 +91,19 @@ eventData <- function(alrtStream, timeWindow, event_type = '') {
     user_roles <- isolate(u$user_roles)
     if(! is.null(user_roles)){
       if(nrow(user_roles) == 0 || user_roles$name %in% c('Global Admin','Suricata Admin','Suricata User')){
-        hidden_columns <- c()
+        hidden_columns <- c("src_ip" ,"dest_ip","host","payload","dns.rrname" ,"dns.grouped.AAAA","http.hostname","http.url","fileinfo.filename",
+                            "dhcp.client_mac","dhcp.assigned_ip" )
+        hidden_columns <- c("src_ip","src_port","dest_ip","proto","app_proto","app_proto_tc","tx_id","payload","payload_printable","stream","packet","icmp_type","icmp_code","app_proto_ts","dns.id","dns.rrname","dns.rrtype","dns.tx_id","dns.qr","dns.rcode","dns.authorities","dns.aa","dns.answers","dns.rd","dns.ra","dns.tc","dns.grouped.AAAA","dns.grouped.PTR","dns.grouped.CNAME","dns.grouped.A","dns.grouped.TXT","tls.subject","tls.issuerdn","tls.serial","tls.fingerprint","tls.sni","tls.version","tls.notbefore","tls.notafter","tls.session_resumed","tls.ja3","http.hostname",
+                            "http.url","http.server","http.transfer_encoding","http.vary","http.http_response_body_printable","http.http_response_body","http.te",
+                            "fileinfo.filename","fileinfo.tx_id","alert.gid","alert.signature_id","alert.rev","alert.signature","alert.metadata.updated_at","alert.metadata.created_at","alert.metadata.deployment","alert.metadata.attack_target","alert.metadata.affected_product",
+                            "metadata.flowints.applayer.anomaly.count","metadata.flowints.http.anomaly.count","metadata.flowints.tcp.retransmission.count","metadata.flowbits","tcp.tcp_flags","tcp.tcp_flags_ts","tcp.tcp_flags_tc","tcp.syn","tcp.rst","tcp.psh","tcp.ack","tcp.state","tcp.fin","tcp.ecn","tcp.cwr","icmp_type.1","icmp_code.1",
+                            "dhcp.id","dhcp.client_mac","dhcp.assigned_ip","dhcp.dhcp_type","dhcp.client_ip","dhcp.relay_ip","dhcp.next_server_ip","dhcp.lease_time","dhcp.subnet_mask","dhcp.routers","dhcp.dns_servers","ikev2.version_major","ikev2.version_minor",
+                            "ikev2.exchange_type","ikev2.message_id","ikev2.init_spi","ikev2.resp_spi","ikev2.role","ikev2.errors","ikev2.payload","ikev2.notify","ikev2.alg_enc","ikev2.alg_auth","ikev2.alg_prf","ikev2.alg_dh","ikev2.alg_esn","ssh.client","ssh.server.proto_version","ssh.server.software_version")
       }
     }
     if(interactive() && !enable_oauth_dev)
       hidden_columns <- c()
+    names(data_row_template)
     
     if(length(hidden_columns) > 0 && nrow(data_out) > 0)
       data_out[,hidden_columns] <- 'hidden'
