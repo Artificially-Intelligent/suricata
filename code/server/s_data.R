@@ -90,7 +90,7 @@ eventData <- function(alrtStream, timeWindow, event_type = '') {
     
     user_roles <- isolate(u$user_roles)
     if(! is.null(user_roles)){
-      if( user_roles$name %in% c('Global Admin','Suricata Admin','Suricata User')){
+      if(nrow(user_roles) == 0 || user_roles$name %in% c('Global Admin','Suricata Admin','Suricata User')){
         hidden_columns <- c()
       }
     }
